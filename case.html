@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#183f35" />
+    <meta name="description" content="形体智练真实案例：从个人体态照片到量化筛查报告、针对性普拉提方案与动作评分。" />
+    <title>真实案例 · 形体智练 FormPilot</title>
+    <style>
+      :root {
+        --forest: #183f35;
+        --forest-soft: #24584a;
+        --cream: #f7f4ec;
+        --sand: #ece7db;
+        --ink: #1d2b26;
+        --muted: #5f7168;
+        --terracotta: #c2683f;
+        --line: #dfd8c9;
+        --ok: #2f7d5d;
+        --warn: #b8791f;
+        --radius: 18px;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--cream);
+        color: var(--ink);
+        font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+        line-height: 1.65;
+        -webkit-font-smoothing: antialiased;
+      }
+      img { max-width: 100%; display: block; }
+      a { color: var(--forest); }
+      .wrap { width: min(1080px, 92vw); margin: 0 auto; }
+      .topbar {
+        position: sticky; top: 0; z-index: 20;
+        background: rgba(24, 63, 53, 0.96);
+        backdrop-filter: blur(8px);
+        color: #f2efe6;
+      }
+      .topbar .wrap {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 16px; padding: 12px 0;
+      }
+      .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: .02em; }
+      .brand i {
+        width: 22px; height: 22px; border-radius: 7px; display: inline-block;
+        background: linear-gradient(135deg, #e9d8b8, #c2683f);
+      }
+      .topbar nav { display: flex; gap: 10px; align-items: center; }
+      .topbar nav a {
+        color: #d8e3dc; text-decoration: none; font-size: 14px;
+        padding: 6px 12px; border-radius: 999px; border: 1px solid rgba(255,255,255,.18);
+      }
+      .topbar nav a.primary { background: #f2efe6; color: var(--forest); border-color: transparent; font-weight: 600; }
+      header.hero { padding: 56px 0 28px; }
+      .eyebrow {
+        display: inline-block; font-size: 12px; letter-spacing: .18em;
+        color: var(--terracotta); font-weight: 700; margin-bottom: 10px;
+      }
+      h1 { font-size: clamp(28px, 4vw, 44px); line-height: 1.25; margin: 0 0 14px; letter-spacing: -.01em; }
+      .lede { font-size: 17px; color: var(--muted); max-width: 62ch; margin: 0 0 22px; }
+      .meta-row { display: flex; flex-wrap: wrap; gap: 10px; }
+      .chip {
+        font-size: 13px; padding: 6px 12px; border-radius: 999px;
+        background: var(--sand); color: var(--forest-soft); border: 1px solid var(--line);
+      }
+      .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin: 30px 0 10px; }
+      .tile {
+        background: #fffdf8; border: 1px solid var(--line); border-radius: var(--radius);
+        padding: 18px; 
+      }
+      .tile b { display: block; font-size: 30px; line-height: 1.1; color: var(--forest); }
+      .tile span { font-size: 13px; color: var(--muted); }
+      section { padding: 40px 0; border-top: 1px solid var(--line); }
+      .sec-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 8px; }
+      .sec-num {
+        font-size: 13px; font-weight: 700; color: #fff; background: var(--forest);
+        border-radius: 8px; padding: 2px 8px; letter-spacing: .06em;
+      }
+      h2 { font-size: clamp(21px, 2.4vw, 27px); margin: 0; }
+      .sec-note { color: var(--muted); font-size: 15px; margin: 6px 0 24px; max-width: 70ch; }
+      .photo-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+      figure { margin: 0; background: #fffdf8; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+      figure .shot { aspect-ratio: 3 / 4; background: #e8e3d6; overflow: hidden; }
+      figure .shot img { width: 100%; height: 100%; object-fit: cover; }
+      figure figcaption { padding: 10px 12px; font-size: 13px; color: var(--forest-soft); font-weight: 600; }
+      .placeholder {
+        aspect-ratio: 3 / 4; display: grid; place-items: center; text-align: center;
+        border: 1.5px dashed #c9c0ad; color: var(--muted); font-size: 13px; padding: 12px;
+        background: repeating-linear-gradient(45deg, #f1ece0, #f1ece0 8px, #f7f3e9 8px, #f7f3e9 16px);
+      }
+      table { width: 100%; border-collapse: collapse; background: #fffdf8; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; font-size: 14px; }
+      thead th { background: var(--sand); text-align: left; padding: 12px; font-size: 13px; color: var(--forest-soft); font-weight: 700; }
+      tbody td { padding: 12px; border-top: 1px solid var(--line); vertical-align: top; }
+      tbody td.val { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--forest); white-space: nowrap; }
+      .tag { display: inline-block; font-size: 12px; padding: 2px 9px; border-radius: 999px; white-space: nowrap; font-weight: 600; }
+      .tag.ok { background: #e4f1e9; color: var(--ok); }
+      .tag.warn { background: #f7ebd8; color: var(--warn); }
+      .finding {
+        margin-top: 18px; background: #fff6ef; border: 1px solid #edd3c2;
+        border-left: 4px solid var(--terracotta); border-radius: 14px; padding: 18px 20px;
+      }
+      .finding h3 { margin: 0 0 8px; font-size: 17px; color: #8f3f1d; }
+      .finding p { margin: 6px 0; font-size: 14.5px; color: #5c4335; }
+      .finding strong { color: #7a3717; }
+      .fineprint { font-size: 13px; color: var(--muted); margin-top: 16px; }
+      .plan-grid { display: grid; gap: 14px; }
+      .ex { background: #fffdf8; border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; }
+      .ex-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+      .ex-head .idx { font-size: 13px; font-weight: 700; color: var(--terracotta); }
+      .ex-head h3 { margin: 0; font-size: 18px; }
+      .ex-head .cat { font-size: 12px; color: var(--forest-soft); background: var(--sand); padding: 2px 9px; border-radius: 999px; }
+      .ex .target { color: var(--muted); font-size: 14px; margin: 6px 0 14px; }
+      .ex .dose { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+      .ex .dose span { font-size: 12.5px; background: #eef4f0; color: var(--forest-soft); border-radius: 8px; padding: 4px 10px; }
+      .ex h4 { margin: 12px 0 6px; font-size: 13.5px; color: var(--forest-soft); letter-spacing: .04em; }
+      .ex ol, .ex ul { margin: 0; padding-left: 20px; font-size: 14.5px; color: #33443c; }
+      .ex li { margin: 4px 0; }
+      .dims { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 18px; }
+      .dim { background: #fffdf8; border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+      .dim h3 { margin: 0 0 10px; font-size: 15px; }
+      .dim ul { margin: 0; padding-left: 18px; font-size: 14px; color: #33443c; }
+      .dim li { display: flex; justify-content: space-between; gap: 10px; margin: 4px 0; }
+      .dim li b { color: var(--forest); }
+      .locked {
+        background: #f1efe7; border: 1px dashed #c4bcaa; border-radius: 14px;
+        padding: 18px 20px; font-size: 14.5px; color: #4b5c53;
+      }
+      .locked strong { color: #93502c; }
+      .cta {
+        margin: 20px 0 0; background: var(--forest); color: #f2efe6; border-radius: 20px;
+        padding: 32px; display: flex; gap: 24px; align-items: center; justify-content: space-between; flex-wrap: wrap;
+      }
+      .cta h2 { color: #fff; font-size: 22px; margin: 0 0 8px; }
+      .cta p { margin: 0; color: #c9d8d1; font-size: 14.5px; max-width: 52ch; }
+      .btn {
+        display: inline-block; text-decoration: none; font-weight: 700; font-size: 15px;
+        background: #f2efe6; color: var(--forest); padding: 13px 24px; border-radius: 999px;
+      }
+      footer { padding: 34px 0 60px; font-size: 13px; color: var(--muted); }
+      footer p { margin: 6px 0; }
+      @media (max-width: 860px) {
+        .tiles { grid-template-columns: repeat(2, 1fr); }
+        .photo-grid { grid-template-columns: repeat(2, 1fr); }
+        .dims { grid-template-columns: 1fr; }
+        header.hero { padding: 34px 0 16px; }
+        section { padding: 30px 0; }
+      }
+      @media (max-width: 560px) {
+        .topbar .wrap { flex-direction: column; align-items: flex-start; gap: 8px; }
+        .topbar nav { width: 100%; }
+        .tile b { font-size: 24px; }
+        table { font-size: 13px; }
+        thead { display: none; }
+        tbody tr { display: block; padding: 10px 12px; border-top: 1px solid var(--line); }
+        tbody td { display: block; padding: 2px 0; border: 0; }
+        tbody td.val::before { content: "测量结果："; color: var(--muted); font-weight: 400; }
+        .cta { padding: 24px; }
+      }
+      @media print {
+        .topbar, .cta { display: none; }
+        body { background: #fff; }
+        section { break-inside: avoid; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="topbar">
+      <div class="wrap">
+        <div class="brand"><i aria-hidden="true"></i>形体智练 · FormPilot</div>
+        <nav>
+          <a href="./case.html">真实案例</a>
+          <a class="primary" href="./index.html">打开完整软件</a>
+        </nav>
+      </div>
+    </div>
+
+    <header class="hero">
+      <div class="wrap">
+        <span class="eyebrow">REAL CASE · 真实案例</span>
+        <h1>一份从体态照片自动生成的运动方案</h1>
+        <p class="lede">
+          下面这组数据不是示意，也不是预先写死的文案：照片在浏览器里由 MediaPipe 实时提取
+          33 个人体关键点，再按图像比例换算出角度与距离，从而得到量化结论、训练动作和评分维度。
+          整个过程照片不上传服务器。
+        </p>
+        <div class="meta-row">
+          <span class="chip">受检者：本人</span>
+          <span class="chip">日期：2026-11-16</span>
+          <span class="chip">数据来源：浏览器端 MediaPipe 实时计算</span>
+          <span class="chip">流程：4 个环节强制顺序</span>
+        </div>
+        <div class="tiles">
+          <div class="tile"><b>12</b><span>项量化指标</span></div>
+          <div class="tile"><b>1</b><span>项需复核倾向</span></div>
+          <div class="tile"><b>5</b><span>个针对性动作</span></div>
+          <div class="tile"><b>4</b><span>道流程门控</span></div>
+        </div>
+      </div>
+    </header>
+
+    <section>
+      <div class="wrap">
+        <div class="sec-head"><span class="sec-num">01</span><h2>采集的体态照片</h2></div>
+        <p class="sec-note">
+          要求赤脚自然站立、穿贴身运动衣物、双臂自然下垂、全身入镜、镜头水平。
+          系统会校验四视图是否齐全，并主动拦截重复文件——重复照片会让评估结果失真。
+        </p>
+        <div class="photo-grid">
+          <figure>
+            <div class="shot"><img src="./case-assets/front.jpg" alt="正面全身照" /></div>
+            <figcaption>正面照 · 面向镜头</figcaption>
+          </figure>
+          <figure>
+            <div class="shot"><img src="./case-assets/back.jpg" alt="背面全身照" /></div>
+            <figcaption>背面照 · 背向镜头</figcaption>
+          </figure>
+          <figure>
+            <div class="shot"><img src="./case-assets/side.jpg" alt="侧面全身照" /></div>
+            <figcaption>侧面照 · 侧身站立</figcaption>
+          </figure>
+          <figure>
+            <div class="placeholder">右侧面照<br />待补拍</figure>
+            <figcaption>暂缺 · 不参与判断</figcaption>
+          </figure>
+        </div>
+        <p class="fineprint">
+          说明：本次仅提供一张侧面照片，右侧面缺失。系统没有用同一张照片冒充两个视角，
+          因此右侧指标不纳入本案例，也不做左右侧面一致性比较。这是刻意的数据质量约束。
+        </p>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap">
+        <div class="sec-head"><span class="sec-num">02</span><h2>体态量化初筛报告</h2></div>
+        <p class="sec-note">
+          表中数值全部来自关键点几何计算，不是主观描述。阈值为筛查参考值，用于判断"是否值得关注"，
+          不等同于临床诊断标准。
+        </p>
+        <table>
+          <thead>
+            <tr><th>评估指标</th><th>测量结果</th><th>筛查参考</th><th>结论</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>正面 · 肩高差 / 肩宽</td><td class="val">6.7%</td><td>≤ 5%，且肩线角 ≤ 3°</td><td><span class="tag warn">需复核</span></td></tr>
+            <tr><td>正面 · 肩线角</td><td class="val">3.9°</td><td>≤ 3°</td><td><span class="tag warn">需复核</span></td></tr>
+            <tr><td>背面 · 肩高差 / 肩宽</td><td class="val">4.9%</td><td>≤ 5%</td><td><span class="tag ok">未见异常</span></td></tr>
+            <tr><td>背面 · 肩线角</td><td class="val">2.8°</td><td>≤ 3°</td><td><span class="tag ok">未见异常</span></td></tr>
+            <tr><td>正面 · 髋部关键点高差 / 髋宽</td><td class="val">2.6%</td><td>≤ 5%（仅对称性参考）</td><td><span class="tag ok">未见异常</span></td></tr>
+            <tr><td>背面 · 髋部关键点高差 / 髋宽</td><td class="val">3.1%</td><td>≤ 5%（仅对称性参考）</td><td><span class="tag ok">未见异常</span></td></tr>
+            <tr><td>正面 · 肩髋中点侧移 / 躯干长</td><td class="val">1.9%</td><td>≤ 5%</td><td><span class="tag ok">未见异常</span></td></tr>
+            <tr><td>背面 · 肩髋中点侧移 / 躯干长</td><td class="val">0.7%</td><td>≤ 5%</td><td><span class="tag ok">未见异常</span></td></tr>
+            <tr><td>侧面 · 近似颅椎角 CVA</td><td class="val">62.6°</td><td>通常 ≥ 50°</td><td><span class="tag ok">未见异常</span></td></tr>
+            <tr><td>侧面 · 肩点相对髋点前移 / 躯干长</td><td class="val">-3.5%</td><td>≤ 10%</td><td><span class="tag ok">未见异常</span></td></tr>
+          </tbody>
+        </table>
+
+        <div class="finding">
+          <h3>唯一需要关注的结论：双肩高度不一致</h3>
+          <p><strong>数据依据：</strong>正面肩高差 6.7%（肩线角 3.9°），背面 4.9%（2.8°）未达阈值，正背面结果不一致。</p>
+          <p><strong>可能影响：</strong>可能伴随单侧颈肩紧张或肩胛控制差异，适合先从无痛范围内的放松与对称性控制练习入手。</p>
+          <p><strong>处理方式：</strong>系统没有直接判定"高低肩"，而是标记为需复核，并要求结合拍摄角度、身体旋转重新核对——因为二维照片无法区分真实结构差异与拍摄误差。</p>
+        </div>
+
+        <p class="fineprint">
+          未评估项：二维关键点不能确诊骨盆前倾 / 后倾、脊柱侧弯或任何疾病。
+          髋部中心来自关键点估算，并非髂前上棘与髂后上棘，因此本报告不对骨盆倾斜下结论。
+          如有持续疼痛、麻木或明显不对称，应寻求专业医疗评估。
+        </p>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap">
+        <div class="sec-head"><span class="sec-num">03</span><h2>据评估结果生成的训练方案</h2></div>
+        <p class="sec-note">
+          这 5 个动作由评估结果推导，不是固定模板：出现高低肩倾向时追加单侧放松与肩胛控制动作；
+          常态动作只保留呼吸与核心打底。本次按新手、居家、无器械、约 20 分钟生成，每个动作约 4 分钟。
+        </p>
+        <div class="plan-grid">
+          <article class="ex">
+            <div class="ex-head"><span class="idx">01</span><h3>肋廓呼吸放松</h3><span class="cat">呼吸与放松</span></div>
+            <p class="target">放松肩颈辅助呼吸肌，建立肋廓扩张与躯干稳定感</p>
+            <div class="dose"><span>5–8 个呼吸循环</span><span>停留：吸气 3–4 秒 / 呼气 4–6 秒</span><span>2 组</span></div>
+            <h4>动作做法</h4>
+            <ol>
+              <li>仰卧屈膝或坐直，双脚有支撑，一手放上胸、一手放下肋廓。</li>
+              <li>鼻吸时让肋廓向前、两侧及后方缓慢扩张，肩膀保持下沉。</li>
+              <li>嘴或鼻缓慢呼气，感受下肋廓回落，不主动收腹到僵直。</li>
+              <li>连续完成呼吸循环，结束前来一次自然呼吸。</li>
+            </ol>
+            <h4>标准要点</h4>
+            <ul>
+              <li>肩颈放松，躯干稳定，呼气时肋廓缓慢回落</li>
+              <li>吸气时肋廓向四周扩张，呼吸保持连续</li>
+              <li>节奏舒适，不追求过深或过快</li>
+            </ul>
+          </article>
+
+          <article class="ex">
+            <div class="ex-head"><span class="idx">02</span><h3>死虫式核心控制</h3><span class="cat">核心与躯干稳定</span></div>
+            <p class="target">在对侧手脚活动中维持躯干稳定，为基础姿态控制打底</p>
+            <div class="dose"><span>每侧 6–10 次</span><span>停留：末端 2–3 秒</span><span>2 组</span></div>
+            <h4>动作做法</h4>
+            <ol>
+              <li>仰卧，双臂朝上，髋膝抬起约 90 度，腰部自然轻贴垫面。</li>
+              <li>呼气并轻收下肋，保持肩髋位置稳定。</li>
+              <li>缓慢将对侧手臂与腿向远处延伸，只到腰背不拱起的范围。</li>
+              <li>吸气回到起始位，换另一侧，缓慢交替。</li>
+            </ol>
+            <h4>标准要点</h4>
+            <ul>
+              <li>起始髋膝约 90 度，移动过程中角度可控</li>
+              <li>腰背与肩髋连线稳定，不随四肢摇晃</li>
+              <li>对侧手脚协调配合，不屏息</li>
+            </ul>
+          </article>
+
+          <article class="ex">
+            <div class="ex-head"><span class="idx">03</span><h3>上斜方肌拉伸</h3><span class="cat">颈部放松</span></div>
+            <p class="target">放松单侧上斜方肌，改善肩部紧张造成的高低差（两侧均练习，较紧张的一侧为重点）</p>
+            <div class="dose"><span>每侧 20–30 秒</span><span>停留：舒适拉伸点</span><span>2 组</span></div>
+            <h4>动作做法</h4>
+            <ol>
+              <li>坐直，双脚踩稳，被拉伸侧的手放在臀下或轻压椅面。</li>
+              <li>保持脸朝正前方，头缓慢倒向另一侧，至颈肩有轻度牵拉感。</li>
+              <li>另一只手仅轻放头顶，不硬拉；自然呼吸，肩膀下沉。</li>
+              <li>缓慢回到中立位，按需要换侧。</li>
+            </ol>
+            <h4>标准要点</h4>
+            <ul>
+              <li>先比较两侧紧张感，较紧张侧可多停留约 5 秒</li>
+              <li>头部只在舒适范围内侧屈，不强行拉扯</li>
+              <li>被拉伸侧肩膀下沉，躯干不随头部侧倒</li>
+            </ul>
+          </article>
+
+          <article class="ex">
+            <div class="ex-head"><span class="idx">04</span><h3>坐姿肩胛滑动</h3><span class="cat">肩胛控制</span></div>
+            <p class="target">练习肩胛骨上回旋与后倾控制，减少耸肩代偿</p>
+            <div class="dose"><span>8–12 次</span><span>停留：末端 2–3 秒</span><span>2 组</span></div>
+            <h4>动作做法</h4>
+            <ol>
+              <li>坐直，双臂自然垂在体侧，先让肩膀缓慢下沉。</li>
+              <li>保持躯干不动，双臂沿身体两侧缓慢向前上方抬起。</li>
+              <li>只到能维持肩颈放松的高度，感受肩胛骨随手臂转动。</li>
+              <li>沿原路缓慢放下，重复时两侧节奏一致。</li>
+            </ol>
+            <h4>标准要点</h4>
+            <ul>
+              <li>双肩放松，肩线不歪斜或上提</li>
+              <li>两侧手臂路径接近，速度与幅度均匀</li>
+              <li>头、肋廓与躯干稳定，不用后仰代偿</li>
+            </ul>
+          </article>
+
+          <article class="ex">
+            <div class="ex-head"><span class="idx">05</span><h3>靠墙滑臂</h3><span class="cat">肩胸整合</span></div>
+            <p class="target">改善抬臂时的肩胛协同、胸前活动度与躯干稳定</p>
+            <div class="dose"><span>8–12 次</span><span>停留：上举末端 2–3 秒</span><span>2 组</span></div>
+            <h4>动作做法</h4>
+            <ol>
+              <li>背靠墙站立，头、上背和骶骨轻触墙，腰部保留自然弧度。</li>
+              <li>双臂屈肘打开，手背或前臂尽量朝向墙面，不强迫贴合。</li>
+              <li>保持下肋不外翻，双臂沿墙缓慢上滑，到无痛末端轻伸肘。</li>
+              <li>缓慢滑回起始位，全程避免肩膀挤向耳朵。</li>
+            </ol>
+            <h4>标准要点</h4>
+            <ul>
+              <li>上举时双肩放松，肩线尽量水平</li>
+              <li>按活动度逐渐伸肘，不强顶肘</li>
+              <li>双臂轨迹对称，下背与肋廓稳定</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap">
+        <div class="sec-head"><span class="sec-num">04</span><h2>动作纠错评分</h2></div>
+        <p class="sec-note">
+          用户对每个动作上传练习照片或视频，系统按对应量表打分。照片评静态姿势，视频评动态过程，
+          两者量表不同，且只对可观测维度计分。
+        </p>
+        <div class="dims">
+          <div class="dim">
+            <h3>照片静态评分（满分 100）</h3>
+            <ul>
+              <li><span>关节排列与对位</span><b>40</b></li>
+              <li><span>标准关键姿势符合度</span><b>30</b></li>
+              <li><span>左右对称与代偿控制</span><b>20</b></li>
+              <li><span>当前姿势安全性</span><b>10</b></li>
+            </ul>
+          </div>
+          <div class="dim">
+            <h3>视频动态评分（满分 100）</h3>
+            <ul>
+              <li><span>关节排列与对位</span><b>30</b></li>
+              <li><span>动作轨迹与幅度</span><b>20</b></li>
+              <li><span>躯干与肩胛稳定</span><b>20</b></li>
+              <li><span>节奏与重复一致性</span><b>15</b></li>
+              <li><span>左右对称与代偿</span><b>15</b></li>
+            </ul>
+          </div>
+        </div>
+        <div class="locked">
+          <strong>当前状态：待上传 5 组练习照片 / 视频。</strong>
+          本案例的评分数据需要真实练习影像才能生成，系统不会编造分数。
+          在 5 个动作全部完成评分前，"生成完整报告"按钮保持锁定——这是四道流程门控中的最后一道。
+        </div>
+      </div>
+    </section>
+
+    <div class="wrap">
+      <div class="cta">
+        <div>
+          <h2>现在轮到你跑一遍</h2>
+          <p>打开软件，用自己的照片走完四个环节：上传 → 报告 → 计划 → 评分 → 导出完整报告。全程在本机浏览器计算。</p>
+        </div>
+        <a class="btn" href="./index.html">进入形体智练</a>
+      </div>
+    </div>
+
+    <footer>
+      <div class="wrap">
+        <p>本案例数据由 MediaPipe Pose 在浏览器端实时计算得出，用于姿态筛查与训练参考。</p>
+        <p>不构成医疗诊断、治疗建议或疗效承诺；如有疼痛、麻木、眩晕或明显不对称，请咨询专业医疗人员。</p>
+      </div>
+    </footer>
+  </body>
+</html>
