@@ -4,24 +4,824 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#183f35" />
-    <meta name="description" content="形体智练——本地完成体态照片筛查、个性化普拉提计划、动作评分纠错与完整报告导出。" />
-    <title>形体智练 · FormPilot</title>
-    <link rel="stylesheet" href="./styles.css" />
+    <meta name="description" content="我的体态分析：四视图关键点量化、直观骨架标注、瑜伽基础训练与严格的动作纠错。" />
+    <title>我的体态分析 · 形体智练 FormPilot</title>
+    <style>
+      :root {
+        --forest: #183f35;
+        --forest-2: #24584a;
+        --cream: #f7f4ec;
+        --sand: #ece7db;
+        --paper: #fffdf8;
+        --ink: #1d2b26;
+        --muted: #5f7168;
+        --terracotta: #c2683f;
+        --line: #dfd8c9;
+        --ok: #2f7d5d;
+        --warn: #b8791f;
+        --bad: #b04a3f;
+        --radius: 18px;
+      }
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body {
+        margin: 0;
+        background: var(--cream);
+        color: var(--ink);
+        font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+        line-height: 1.68;
+        -webkit-font-smoothing: antialiased;
+      }
+      img { max-width: 100%; display: block; }
+      a { color: var(--forest); }
+      .wrap { width: min(1080px, 92vw); margin: 0 auto; }
+      .topbar {
+        position: sticky; top: 0; z-index: 30;
+        background: rgba(24, 63, 53, 0.97);
+        backdrop-filter: blur(8px);
+        color: #f2efe6;
+      }
+      .topbar .wrap { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 11px 0; }
+      .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: .02em; font-size: 15px; }
+      .brand i { width: 22px; height: 22px; border-radius: 7px; display: inline-block; background: linear-gradient(135deg, #e9d8b8, #c2683f); }
+      .topbar nav { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+      .topbar nav a {
+        color: #d8e3dc; text-decoration: none; font-size: 13px;
+        padding: 6px 12px; border-radius: 999px; border: 1px solid rgba(255,255,255,.18);
+      }
+      .topbar nav a.primary { background: #f2efe6; color: var(--forest); border-color: transparent; font-weight: 700; }
+      header.hero { padding: 54px 0 24px; }
+      .eyebrow { display: inline-block; font-size: 12px; letter-spacing: .18em; color: var(--terracotta); font-weight: 700; margin-bottom: 10px; }
+      h1 { font-size: clamp(27px, 4vw, 43px); line-height: 1.24; margin: 0 0 14px; letter-spacing: -.01em; }
+      .lede { font-size: 16.5px; color: var(--muted); max-width: 64ch; margin: 0 0 20px; }
+      .meta-row { display: flex; flex-wrap: wrap; gap: 9px; }
+      .chip { font-size: 12.5px; padding: 6px 12px; border-radius: 999px; background: var(--sand); color: var(--forest-2); border: 1px solid var(--line); }
+      .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 13px; margin: 28px 0 12px; }
+      .tile { background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); padding: 17px; }
+      .tile b { display: block; font-size: 29px; line-height: 1.1; color: var(--forest); }
+      .tile span { font-size: 12.5px; color: var(--muted); }
+      section { padding: 38px 0; border-top: 1px solid var(--line); }
+      .sec-head { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; flex-wrap: wrap; }
+      .sec-num { font-size: 12.5px; font-weight: 700; color: #fff; background: var(--forest); border-radius: 8px; padding: 2px 9px; letter-spacing: .06em; }
+      h2 { font-size: clamp(21px, 2.4vw, 27px); margin: 0; }
+      .sec-note { color: var(--muted); font-size: 14.5px; margin: 6px 0 22px; max-width: 74ch; }
+      .photo-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 13px; }
+      figure { margin: 0; background: var(--paper); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+      .shot { position: relative; aspect-ratio: 3 / 4; background: #e8e3d6; }
+      .shot img { width: 100%; height: 100%; object-fit: contain; }
+      .shot canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+      figure figcaption { padding: 10px 12px 12px; font-size: 12.5px; color: var(--forest-2); }
+      figure figcaption b { display: block; font-size: 13px; margin-bottom: 2px; }
+      figure figcaption span { color: var(--muted); font-size: 11.5px; }
+      .photo-tools { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+      .toggle-btn {
+        border: 1px solid var(--forest-2); background: #fff; color: var(--forest-2);
+        border-radius: 999px; padding: 8px 15px; font-size: 13px; font-weight: 600; cursor: pointer;
+        font-family: inherit;
+      }
+      .toggle-btn[aria-pressed="false"] { opacity: .55; }
+      .photo-tools .hint { font-size: 12.5px; color: var(--muted); }
+      .metric-group { margin-bottom: 22px; }
+      .metric-group h3 { font-size: 14px; color: var(--forest-2); margin: 0 0 10px; letter-spacing: .04em; }
+      .bar-row {
+        display: grid; grid-template-columns: minmax(150px, 1.15fr) minmax(160px, 2fr) auto auto;
+        gap: 12px; align-items: center; padding: 10px 12px;
+        background: var(--paper); border: 1px solid var(--line); border-radius: 12px; margin-bottom: 8px;
+      }
+      .bar-label { font-size: 13px; font-weight: 600; }
+      .bar-label small { display: block; font-weight: 400; color: var(--muted); font-size: 11px; }
+      .bar-track { position: relative; height: 12px; border-radius: 999px; background: #e9e5da; overflow: visible; }
+      .bar-fill { height: 100%; border-radius: 999px; }
+      .bar-fill.ok { background: linear-gradient(90deg, #3f8f6c, #6bb08c); }
+      .bar-fill.warn { background: linear-gradient(90deg, #cf8a2c, #e2ae62); }
+      .bar-fill.bad { background: linear-gradient(90deg, #b04a3f, #cf7a6f); }
+      .bar-tick { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--forest); opacity: .55; border-radius: 2px; }
+      .bar-tick::after {
+        content: "阈值"; position: absolute; top: -17px; left: 50%; transform: translateX(-50%);
+        font-size: 9px; color: var(--muted); white-space: nowrap;
+      }
+      .bar-value { font-size: 13px; font-weight: 700; color: var(--forest); font-variant-numeric: tabular-nums; white-space: nowrap; }
+      .bar-ref { font-size: 11.5px; color: var(--muted); white-space: nowrap; }
+      .tag { display: inline-block; font-size: 11.5px; padding: 2px 9px; border-radius: 999px; white-space: nowrap; font-weight: 600; }
+      .tag.ok { background: #e4f1e9; color: var(--ok); }
+      .tag.warn { background: #f7ebd8; color: var(--warn); }
+      .tag.bad { background: #f7e4e0; color: var(--bad); }
+      .tag.neutral { background: #eeece3; color: var(--muted); }
+      .unassessed { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 12px; }
+      .unassessed div { background: #f1efe7; border: 1px dashed #c4bcaa; border-radius: 12px; padding: 12px 14px; font-size: 12.5px; color: #4b5c53; }
+      .unassessed b { color: #93502c; }
+      .finding {
+        margin-top: 20px; background: #fff6ef; border: 1px solid #edd3c2;
+        border-left: 4px solid var(--terracotta); border-radius: 14px; padding: 18px 20px;
+      }
+      .finding h3 { margin: 0 0 8px; font-size: 17px; color: #8f3f1d; }
+      .finding p { margin: 6px 0; font-size: 14px; color: #5c4335; }
+      .finding strong { color: #7a3717; }
+      .fineprint { font-size: 12.5px; color: var(--muted); margin-top: 14px; }
+      details.raw { margin-top: 18px; background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 14px 18px; overflow-x: auto; }
+      details.raw summary { cursor: pointer; font-size: 13.5px; font-weight: 700; color: var(--forest-2); }
+      details.raw table { min-width: 540px; }
+      table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 12px; }
+      thead th { background: var(--sand); text-align: left; padding: 10px; font-size: 12px; color: var(--forest-2); }
+      tbody td { padding: 10px; border-top: 1px solid var(--line); vertical-align: top; }
+      tbody td.val { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--forest); white-space: nowrap; }
+      .plan-grid { display: grid; gap: 16px; }
+      .ex { background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; }
+      .ex-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+      .ex-head .idx { font-size: 13px; font-weight: 700; color: var(--terracotta); }
+      .ex-head h3 { margin: 0; font-size: 19px; }
+      .ex-head .sanskrit { font-size: 12px; color: var(--muted); font-weight: 400; }
+      .ex-head .cat { font-size: 11.5px; color: var(--forest-2); background: var(--sand); padding: 2px 9px; border-radius: 999px; }
+      .ex .target { color: var(--muted); font-size: 13.5px; margin: 6px 0 12px; }
+      .dose { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 14px; }
+      .dose span { font-size: 12px; background: #eef4f0; color: var(--forest-2); border-radius: 8px; padding: 4px 10px; }
+      .ex-body { display: grid; grid-template-columns: 1.05fr .95fr; gap: 22px; }
+      .ex h4 { margin: 14px 0 6px; font-size: 13px; color: var(--forest-2); letter-spacing: .04em; }
+      .ex h4:first-child { margin-top: 0; }
+      .ex ol, .ex ul { margin: 0; padding-left: 19px; font-size: 13.5px; color: #33443c; }
+      .ex li { margin: 5px 0; }
+      .video-block { margin-bottom: 15px; }
+      .video-poster {
+        display: flex; align-items: center; gap: 13px; padding: 14px 16px;
+        border: 1px dashed #b9c9bd; border-radius: 14px;
+        background: linear-gradient(135deg, #f4f8f3, #eef4ef);
+        cursor: pointer; color: var(--forest); width: 100%; text-align: left; font-family: inherit;
+      }
+      .video-poster:hover { border-color: var(--forest-2); }
+      .play-badge { width: 44px; height: 44px; border-radius: 50%; background: var(--forest); color: #fff; display: grid; place-items: center; flex: 0 0 auto; }
+      .video-poster strong { display: block; font-size: 13.5px; }
+      .video-poster span { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
+      .video-frame { position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 14px; overflow: hidden; background: #000; }
+      .video-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+      .video-source { margin-top: 8px; font-size: 11.5px; line-height: 1.55; color: var(--muted); }
+      .video-source a { color: var(--forest-2); }
+      .caution { margin-top: 14px; padding-top: 13px; border-top: 1px dashed var(--line); display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+      .caution p { margin: 0; font-size: 12.5px; color: var(--muted); }
+      .review-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 13px; margin: 18px 0; }
+      .review-card { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+      .review-card b { display: block; font-size: 13.5px; margin-bottom: 5px; color: var(--forest-2); }
+      .review-card p { margin: 0; font-size: 12.5px; color: var(--muted); }
+      .evidence-demo { margin-top: 18px; background: #fff; border: 1px solid #edd3c2; border-left: 4px solid var(--terracotta); border-radius: 13px; padding: 15px 18px; }
+      .evidence-demo strong { color: #8f3f1d; font-size: 14px; }
+      .evidence-demo p { margin: 5px 0; font-size: 13px; color: #5c4335; }
+      .evidence-demo .measured { font-weight: 700; color: #8f3f1d; }
+      .cta {
+        margin: 20px 0 0; background: var(--forest); color: #f2efe6; border-radius: 20px;
+        padding: 30px; display: flex; gap: 24px; align-items: center; justify-content: space-between; flex-wrap: wrap;
+      }
+      .cta h2 { color: #fff; font-size: 22px; margin: 0 0 8px; }
+      .cta p { margin: 0; color: #c9d8d1; font-size: 14px; max-width: 54ch; }
+      .btn { display: inline-block; text-decoration: none; font-weight: 700; font-size: 14.5px; background: #f2efe6; color: var(--forest); padding: 13px 24px; border-radius: 999px; }
+      footer { padding: 32px 0 58px; font-size: 12.5px; color: var(--muted); }
+      footer p { margin: 6px 0; }
+      @media (max-width: 900px) {
+        .photo-grid { grid-template-columns: repeat(2, 1fr); }
+        .tiles { grid-template-columns: repeat(2, 1fr); }
+        .bar-row { grid-template-columns: 1fr auto; row-gap: 7px; }
+        .bar-track { grid-column: 1 / -1; grid-row: 2; }
+        .bar-ref { grid-column: 1 / -1; }
+        .ex-body, .caution { grid-template-columns: 1fr; }
+        .review-grid { grid-template-columns: 1fr; }
+      }
+      @media (max-width: 600px) {
+        .topbar .wrap { flex-direction: column; align-items: flex-start; gap: 7px; }
+        .topbar nav { width: 100%; }
+        .topbar nav a { font-size: 12px; padding: 5px 10px; }
+        header.hero { padding: 32px 0 14px; }
+        section { padding: 28px 0; }
+        .unassessed { grid-template-columns: 1fr; }
+        .tile b { font-size: 24px; }
+        .cta { padding: 22px; }
+        .ex { padding: 16px; }
+      }
+      @media print {
+        .topbar, .cta, .photo-tools { display: none; }
+        body { background: #fff; }
+        section { break-inside: avoid; }
+      }
+    </style>
   </head>
   <body>
-    <div id="app">
-      <div class="boot-screen">
-        <div class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></div>
-        <p>正在准备形体智练…</p>
+    <div class="topbar">
+      <div class="wrap">
+        <div class="brand"><i aria-hidden="true"></i>形体智练 · FormPilot</div>
+        <nav>
+          <a href="#photos">体态照片</a>
+          <a href="#metrics">量化指标</a>
+          <a href="#yoga">瑜伽训练</a>
+          <a href="#review">动作纠错</a>
+          <a class="primary" href="./app.html">打开训练软件</a>
+        </nav>
       </div>
     </div>
-    <a
-      href="./case.html"
-      style="position:fixed;right:16px;bottom:16px;z-index:50;font:600 13px/1 'PingFang SC',system-ui,sans-serif;color:#f2efe6;background:rgba(24,63,53,.92);padding:10px 16px;border-radius:999px;text-decoration:none;box-shadow:0 6px 18px rgba(0,0,0,.18)"
-      >查看真实案例</a
-    >
-    <div id="toast-region" class="toast-region" aria-live="polite"></div>
-    <noscript>请启用 JavaScript 后使用形体智练。</noscript>
-    <script type="module" src="./app.js"></script>
+
+    <header class="hero">
+      <div class="wrap">
+        <span class="eyebrow">MY POSTURE ANALYSIS · 我的体态分析</span>
+        <h1>我的体态，用可测量的数据说话</h1>
+        <p class="lede">
+          这页不是示例，也不是预先写死的描述。下面是我本人的三张体态照片，由 MediaPipe 提取 33 个人体关键点，
+          再按图像比例换算出肩线、髋线、头颈角度与躯干偏移。打开即可查看，无需重新上传。
+        </p>
+        <div class="meta-row">
+          <span class="chip">受检者：本人</span>
+          <span class="chip">采集日期：2026-11-16</span>
+          <span class="chip">照片：正面 / 背面 / 侧面</span>
+          <span class="chip">计算方式：离线 MediaPipe 关键点</span>
+        </div>
+        <div class="tiles">
+          <div class="tile"><b>12</b><span>项量化指标</span></div>
+          <div class="tile"><b>10</b><span>项在参考范围</span></div>
+          <div class="tile"><b>1</b><span>项需要复核</span></div>
+          <div class="tile"><b>5</b><span>个瑜伽基础动作</span></div>
+        </div>
+      </div>
+    </header>
+
+    <section id="photos">
+      <div class="wrap">
+        <div class="sec-head"><span class="sec-num">01</span><h2>我的体态照片与骨架标注</h2></div>
+        <p class="sec-note">
+          照片上叠加的是模型实际识别到的骨骼关键点与测量线：橙色为肩线，绿色为髋线，虚线为测量参考。
+          可以关闭标注只看原始照片。右侧面照片缺失，我没有用同一张照片冒充两个视角；第四张是侧面照片的镜像，仅作视觉参考。
+        </p>
+        <div class="photo-tools">
+          <button class="toggle-btn" id="skeleton-toggle" aria-pressed="true">隐藏骨架标注</button>
+          <span class="hint">标注位置来自照片本身的关键点坐标，不是示意线条。</span>
+        </div>
+        <div class="photo-grid" id="photo-grid">
+          <figure data-view="front">
+            <div class="shot"><img src="./case-assets/front.jpg" alt="正面体态照片" /><canvas></canvas></div>
+            <figcaption><b>正面照</b>肩高差 6.2% · 肩线角 3.6°<span>需复核</span></figcaption>
+          </figure>
+          <figure data-view="back">
+            <div class="shot"><img src="./case-assets/back.jpg" alt="背面体态照片" /><canvas></canvas></div>
+            <figcaption><b>背面照</b>肩高差 3.9% · 肩线角 2.2°<span>参考范围内</span></figcaption>
+          </figure>
+          <figure data-view="side">
+            <div class="shot"><img src="./case-assets/side.jpg" alt="侧面体态照片" /><canvas></canvas></div>
+            <figcaption><b>侧面照</b>近似颅椎角 CVA 73.7°<span>参考范围内</span></figcaption>
+          </figure>
+          <figure data-view="side_mirror">
+            <div class="shot"><img src="./case-assets/side-mirror.jpg" alt="侧面照片的水平镜像" /><canvas></canvas></div>
+            <figcaption><b>侧面镜像</b>仅用于视觉参考<span>不是独立的右侧拍摄，不参与评估</span></figcaption>
+          </figure>
+        </div>
+        <p class="fineprint">
+          说明：镜像图不是新的拍摄视角，其关键点只是原侧面照片的左右翻转结果，因此不纳入左右侧面一致性比较。
+          这也是本页只有 10 项已测指标、另外 2 项标记为未采集的原因。
+        </p>
+      </div>
+    </section>
+
+    <section id="metrics">
+      <div class="wrap">
+        <div class="sec-head"><span class="sec-num">02</span><h2>体态量化指标（直观对比）</h2></div>
+        <p class="sec-note">
+          每一行都是「实测值 vs 筛查阈值」。绿条表示在参考范围内，橙条表示达到或超过筛查阈值。
+          竖线是该指标的阈值位置。所有数值都来自二维图像的关键点几何计算，不是主观目测。
+        </p>
+        <div id="metric-bars"></div>
+        <div class="unassessed">
+          <div><b>未采集 · 右侧面 CVA</b><br />缺少独立右侧照片，无法与侧面结果做左右一致性比较。</div>
+          <div><b>未采集 · 右侧肩点前移</b><br />同样因缺少独立右侧照片而不参与判断，不用镜像图替代。</div>
+        </div>
+        <details class="raw">
+          <summary>查看完整 12 项指标原始表</summary>
+          <table>
+            <thead><tr><th>评估指标</th><th>测量结果</th><th>筛查参考</th><th>结论</th></tr></thead>
+            <tbody>
+              <tr><td>正面 · 肩高差 / 肩宽</td><td class="val">6.2%</td><td>≤ 5%，且肩线角 ≤ 3°</td><td><span class="tag warn">需复核</span></td></tr>
+              <tr><td>正面 · 肩线角</td><td class="val">3.6°</td><td>≤ 3°</td><td><span class="tag warn">需复核</span></td></tr>
+              <tr><td>正面 · 髋部关键点高差 / 髋宽</td><td class="val">2.4%</td><td>≤ 5%（仅对称性参考）</td><td><span class="tag ok">未见异常</span></td></tr>
+              <tr><td>正面 · 肩髋中点侧移 / 躯干长</td><td class="val">1.9%</td><td>≤ 5%</td><td><span class="tag ok">未见异常</span></td></tr>
+              <tr><td>背面 · 肩高差 / 肩宽</td><td class="val">3.9%</td><td>≤ 5%</td><td><span class="tag ok">未见异常</span></td></tr>
+              <tr><td>背面 · 肩线角</td><td class="val">2.2°</td><td>≤ 3°</td><td><span class="tag ok">未见异常</span></td></tr>
+              <tr><td>背面 · 髋部关键点高差 / 髋宽</td><td class="val">0.5%</td><td>≤ 5%（仅对称性参考）</td><td><span class="tag ok">未见异常</span></td></tr>
+              <tr><td>背面 · 肩髋中点侧移 / 躯干长</td><td class="val">1.6%</td><td>≤ 5%</td><td><span class="tag ok">未见异常</span></td></tr>
+              <tr><td>侧面 · 近似颅椎角 CVA</td><td class="val">73.7°</td><td>通常 ≥ 50°</td><td><span class="tag ok">未见异常</span></td></tr>
+              <tr><td>侧面 · 肩点相对髋点前移 / 躯干长</td><td class="val">-3.0%</td><td>≤ 10%</td><td><span class="tag ok">未见异常</span></td></tr>
+              <tr><td>右侧面 · 近似颅椎角 CVA</td><td class="val">未采集</td><td>通常 ≥ 50°</td><td><span class="tag neutral">不可评估</span></td></tr>
+              <tr><td>右侧面 · 肩点相对髋点前移 / 躯干长</td><td class="val">未采集</td><td>≤ 10%</td><td><span class="tag neutral">不可评估</span></td></tr>
+            </tbody>
+          </table>
+        </details>
+      </div>
+    </section>
+
+    <section>
+      <div class="wrap">
+        <div class="sec-head"><span class="sec-num">03</span><h2>我的关键发现</h2></div>
+        <p class="sec-note">只有达到筛查阈值、且正背面结果一致的项，才会被写成结论。这里只有一项。</p>
+        <div class="finding">
+          <h3>双肩高度不一致（正面达到阈值，背面未达到，需复核）</h3>
+          <p><strong>数据依据：</strong>正面肩高差 6.2%（阈值 ≤5%），肩线角 3.6°（阈值 ≤3°）；同一姿势的背面为 3.9% 与 2.2°，均在参考范围内。</p>
+          <p><strong>为什么标记为“需复核”而不是直接下诊断：</strong>正面与背面结果方向不一致。二维照片无法区分真实结构差异、拍摄角度偏移、身体轻微旋转或站姿重心变化，因此不能仅凭一次正面照片判定高低肩。</p>
+          <p><strong>可执行的处理：</strong>不针对“高低肩”做任何强行矫正，只安排对称性感知与肩带控制的瑜伽基础动作；建议在相同机位、相同光线下补拍一次正面与背面，观察结果是否可重复。</p>
+          <p><strong>没有下结论的项目：</strong>骨盆前倾 / 后倾、脊柱侧弯、腿型问题均未被本方法评估，也不在本页给出任何推测。</p>
+        </div>
+        <p class="fineprint">
+          髋部中心由 MediaPipe 髋关节关键点估算，并非髂前上棘 / 髂后上棘，因此本页不对骨盆倾斜下结论。
+          本页仅用于姿态筛查与训练参考，不替代医疗诊断或影像学检查。
+        </p>
+      </div>
+    </section>
+
+    <section id="yoga">
+      <div class="wrap">
+        <div class="sec-head"><span class="sec-num">04</span><h2>给我的瑜伽基础训练</h2></div>
+        <p class="sec-note">
+          5 个动作全部来自瑜伽基础体式，按我的评估结果排序：先放松，再延展与对称控制，最后做后侧链激活。
+          每个动作都有完整文字讲解，并配有同一个讲师、同一套课程的分集视频，便于逐帧对照。
+        </p>
+        <div class="plan-grid">
+          <article class="ex">
+            <div class="ex-head"><span class="idx">01</span><h3>婴儿式</h3><span class="sanskrit">Balasana</span><span class="cat">放松与呼吸</span></div>
+            <p class="target">放松肩背与下背，建立髋屈与呼吸配合，作为训练开始与结束的恢复体式。</p>
+            <div class="dose"><span>5–8 个呼吸</span><span>每次停留 30–60 秒</span><span>2 组</span></div>
+            <div class="video-block">
+              <button class="video-poster" data-src="https://player.bilibili.com/player.html?bvid=BV12K4y1U7C4&page=23&high_quality=1&danmaku=0" data-url="https://www.bilibili.com/video/BV12K4y1U7C4?p=23">
+                <span class="play-badge"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m10 8 6 4-6 4Z"/></svg></span>
+                <span><strong>播放教学视频 · 婴儿式</strong><span>《30个瑜伽体式精讲》第 23 集 · 同一讲师完整示范</span></span>
+              </button>
+              <div class="video-source">来源：哔哩哔哩 · 我是小亓啊《30个瑜伽体式精讲》 · <a href="https://www.bilibili.com/video/BV12K4y1U7C4?p=23" target="_blank" rel="noopener">在 B 站打开</a></div>
+            </div>
+            <div class="ex-body">
+              <div>
+                <h4>动作做法</h4>
+                <ol>
+                  <li>跪坐在垫上，双膝并拢或与髋同宽，脚背贴地，臀部坐向脚跟。</li>
+                  <li>吸气延展脊柱，呼气从髋部折叠，躯干缓慢落在双腿之间。</li>
+                  <li>双臂向前伸展，与肩同宽，掌心贴地，额头轻触垫面或瑜伽砖。</li>
+                  <li>保持臀部靠近脚跟，肩胛骨向两侧展开，颈部完全放松。</li>
+                  <li>鼻吸鼻呼：吸气时感受后背与肋廓扩张，呼气时让肩背继续下沉。</li>
+                  <li>结束前吸气，双手推地缓慢起身，回到跪坐。</li>
+                </ol>
+              </div>
+              <div>
+                <h4>标准要点</h4>
+                <ul>
+                  <li>臀部坐向脚跟，髋部保持折叠，不用腰部强行下压。</li>
+                  <li>双臂前伸时肘部自然伸展但不锁死，肩胛骨向两侧展开。</li>
+                  <li>额头有支撑，颈部不挤压，呼吸连续不憋气。</li>
+                </ul>
+                <h4>呼吸配合</h4>
+                <p>吸气到后背与肋廓，呼气时放松肩胛与下背，全程鼻吸鼻呼。</p>
+              </div>
+            </div>
+            <div class="caution">
+              <div><h4>常见错误</h4><ul><li>臀部离开脚跟、下背塌陷。</li><li>耸肩，肩胛骨挤向耳朵。</li><li>屏息或呼吸急促。</li></ul></div>
+              <div><h4>不适合练习的情况</h4><p>膝关节损伤、孕期、腹泻或饭后一小时内避免深度折叠；有膝痛时先咨询专业人士。</p></div>
+            </div>
+          </article>
+
+          <article class="ex">
+            <div class="ex-head"><span class="idx">02</span><h3>下犬式</h3><span class="sanskrit">Adho Mukha Svanasana</span><span class="cat">全身伸展 / 肩胛稳定</span></div>
+            <p class="target">延展脊柱与身体后侧链，建立肩胛上回旋与手臂支撑控制，对应我双肩对称性不足的筛查结果。</p>
+            <div class="dose"><span>5–8 个呼吸</span><span>每次停留 30–45 秒</span><span>2 组</span></div>
+            <div class="video-block">
+              <button class="video-poster" data-src="https://player.bilibili.com/player.html?bvid=BV12K4y1U7C4&page=28&high_quality=1&danmaku=0" data-url="https://www.bilibili.com/video/BV12K4y1U7C4?p=28">
+                <span class="play-badge"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m10 8 6 4-6 4Z"/></svg></span>
+                <span><strong>播放教学视频 · 下犬式</strong><span>《30个瑜伽体式精讲》第 28 集 · 同一讲师完整示范</span></span>
+              </button>
+              <div class="video-source">来源：哔哩哔哩 · 我是小亓啊《30个瑜伽体式精讲》 · <a href="https://www.bilibili.com/video/BV12K4y1U7C4?p=28" target="_blank" rel="noopener">在 B 站打开</a></div>
+            </div>
+            <div class="ex-body">
+              <div>
+                <h4>动作做法</h4>
+                <ol>
+                  <li>从四角板凳式开始，双手位于肩正下方，双膝位于髋正下方。</li>
+                  <li>吸气准备，呼气时双手推地，坐骨向后上方抬高，身体形成倒 V 形。</li>
+                  <li>双手与肩同宽，食指朝前，虎口压实垫面，肘窝相对，肘部不锁死。</li>
+                  <li>双脚与髋同宽，脚跟可踩地也可微抬，优先保证脊柱延展。</li>
+                  <li>头颈放松，位于两臂之间，耳朵与上臂平行，不抬头挤压颈部。</li>
+                  <li>保持 5–8 个呼吸后，呼气屈膝回到四角板凳式或婴儿式。</li>
+                </ol>
+              </div>
+              <div>
+                <h4>标准要点</h4>
+                <ul>
+                  <li>手掌均匀受力，肩胛骨远离耳朵，肩膀不耸起。</li>
+                  <li>脊柱延展优先于脚跟落地，膝盖可微屈。</li>
+                  <li>肘部保持伸展但不超伸，肋骨不外翻。</li>
+                  <li>头颈中立，耳朵与上臂大致平行。</li>
+                </ul>
+                <h4>呼吸配合</h4>
+                <p>吸气时肋廓扩张、脊柱延长，呼气时坐骨向后上方，不憋气。</p>
+              </div>
+            </div>
+            <div class="caution">
+              <div><h4>常见错误</h4><ul><li>耸肩，肩胛骨挤向耳朵。</li><li>肘关节超伸或完全锁死。</li><li>腰椎塌陷、肋骨外翻，重心压在手腕。</li><li>为让脚跟落地而弓起脊柱。</li></ul></div>
+              <div><h4>不适合练习的情况</h4><p>腕管综合征、手腕损伤、未控制的高血压、眩晕或孕期后期应避免或改为靠墙版本。</p></div>
+            </div>
+          </article>
+
+          <article class="ex">
+            <div class="ex-head"><span class="idx">03</span><h3>战士二式</h3><span class="sanskrit">Virabhadrasana II</span><span class="cat">下肢对位 / 肩带对称</span></div>
+            <p class="target">建立前膝与脚尖对位、双臂水平展开与躯干直立的整体控制。</p>
+            <div class="dose"><span>每侧 3–5 个呼吸</span><span>每侧停留 20–30 秒</span><span>2 组</span></div>
+            <div class="video-block">
+              <button class="video-poster" data-src="https://player.bilibili.com/player.html?bvid=BV12K4y1U7C4&page=11&high_quality=1&danmaku=0" data-url="https://www.bilibili.com/video/BV12K4y1U7C4?p=11">
+                <span class="play-badge"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m10 8 6 4-6 4Z"/></svg></span>
+                <span><strong>播放教学视频 · 战士二式</strong><span>《30个瑜伽体式精讲》第 11 集 · 同一讲师完整示范</span></span>
+              </button>
+              <div class="video-source">来源：哔哩哔哩 · 我是小亓啊《30个瑜伽体式精讲》 · <a href="https://www.bilibili.com/video/BV12K4y1U7C4?p=11" target="_blank" rel="noopener">在 B 站打开</a></div>
+            </div>
+            <div class="ex-body">
+              <div>
+                <h4>动作做法</h4>
+                <ol>
+                  <li>山式站立，双脚分开约一条腿长，右脚外转 90°，左脚内扣约 15°。</li>
+                  <li>吸气，双臂向两侧平举至与地面平行，掌心向下，肩膀放松。</li>
+                  <li>呼气屈右膝，膝盖对准右脚第二、三脚趾，大腿尽量接近平行地面。</li>
+                  <li>躯干保持直立并位于两腿之间，不向前倾，目光看向右手指尖。</li>
+                  <li>后腿伸直，左脚外侧压实垫面，足弓上提，重心均匀分布。</li>
+                  <li>保持 3–5 个呼吸后，吸气伸直右腿，转脚换另一侧。</li>
+                </ol>
+              </div>
+              <div>
+                <h4>标准要点</h4>
+                <ul>
+                  <li>前膝对准第二、三脚趾，不内扣，膝盖不超过脚尖过多。</li>
+                  <li>双臂与地面平行，两侧肩线水平，肩膀远离耳朵。</li>
+                  <li>躯干直立位于两腿之间，不向前倾或侧倒。</li>
+                  <li>后腿伸直，后脚外侧踩实，足弓上提。</li>
+                </ul>
+                <h4>呼吸配合</h4>
+                <p>吸气延展脊柱并展开双臂，呼气屈膝下沉，保持均匀呼吸。</p>
+              </div>
+            </div>
+            <div class="caution">
+              <div><h4>常见错误</h4><ul><li>前膝内扣或明显超过脚尖。</li><li>两侧手臂不等高或耸肩。</li><li>躯干前倾，重心全压在前腿。</li><li>后膝弯曲、后脚外侧离地。</li></ul></div>
+              <div><h4>不适合练习的情况</h4><p>膝关节损伤、髋关节疼痛或平衡障碍者应减小步幅与屈膝角度，必要时靠墙练习。</p></div>
+            </div>
+          </article>
+
+          <article class="ex">
+            <div class="ex-head"><span class="idx">04</span><h3>树式</h3><span class="sanskrit">Vrksasana</span><span class="cat">平衡 / 肩带对称</span></div>
+            <p class="target">练习单腿平衡与肩带对称控制，改善双肩高度差异的对称感知。</p>
+            <div class="dose"><span>每侧 3–5 个呼吸</span><span>每侧停留 20–30 秒</span><span>2 组</span></div>
+            <div class="video-block">
+              <button class="video-poster" data-src="https://player.bilibili.com/player.html?bvid=BV12K4y1U7C4&page=3&high_quality=1&danmaku=0" data-url="https://www.bilibili.com/video/BV12K4y1U7C4?p=3">
+                <span class="play-badge"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m10 8 6 4-6 4Z"/></svg></span>
+                <span><strong>播放教学视频 · 树式</strong><span>《30个瑜伽体式精讲》第 3 集 · 同一讲师完整示范</span></span>
+              </button>
+              <div class="video-source">来源：哔哩哔哩 · 我是小亓啊《30个瑜伽体式精讲》 · <a href="https://www.bilibili.com/video/BV12K4y1U7C4?p=3" target="_blank" rel="noopener">在 B 站打开</a></div>
+            </div>
+            <div class="ex-body">
+              <div>
+                <h4>动作做法</h4>
+                <ol>
+                  <li>山式站立，重心缓慢移到左脚，右脚抬起。</li>
+                  <li>将右脚掌放在左小腿内侧或大腿内侧，避免直接压在膝关节上。</li>
+                  <li>右脚趾可轻点地辅助平衡，左腿伸直但不过度锁膝。</li>
+                  <li>双手先合十于胸前，稳定后缓慢上举过头，双臂与肩同宽。</li>
+                  <li>骨盆保持中立，尾骨向下，肋骨不外翻，目视前方固定一点。</li>
+                  <li>保持 3–5 个呼吸后放下右脚，换另一侧练习。</li>
+                </ol>
+              </div>
+              <div>
+                <h4>标准要点</h4>
+                <ul>
+                  <li>支撑腿膝盖对准脚尖，不内扣，不过度锁死。</li>
+                  <li>抬起的脚掌贴在小腿或大腿内侧，不直接压膝关节。</li>
+                  <li>双臂上举时肩线水平、肩膀下沉，不耸肩。</li>
+                  <li>骨盆保持水平，身体不歪向支撑侧。</li>
+                </ul>
+                <h4>呼吸配合</h4>
+                <p>吸气延展脊柱并上举双臂，呼气稳定骨盆与支撑腿，保持自然呼吸。</p>
+              </div>
+            </div>
+            <div class="caution">
+              <div><h4>常见错误</h4><ul><li>支撑膝内扣，脚掌内侧受力塌陷。</li><li>抬起的脚直接压在膝关节上。</li><li>双臂上举时耸肩或两侧手臂不等高。</li><li>骨盆侧倾，身体明显歪向一侧。</li></ul></div>
+              <div><h4>不适合练习的情况</h4><p>踝关节或膝关节不稳定、眩晕、低血压者应靠墙练习，避免闭眼。</p></div>
+            </div>
+          </article>
+
+          <article class="ex">
+            <div class="ex-head"><span class="idx">05</span><h3>桥式</h3><span class="sanskrit">Setu Bandhasana</span><span class="cat">后侧链 / 核心稳定</span></div>
+            <p class="target">激活臀肌与身体后侧链，练习髋伸时肋廓与骨盆的稳定配合。</p>
+            <div class="dose"><span>8–12 次</span><span>顶点停留 3–5 秒</span><span>2 组</span></div>
+            <div class="video-block">
+              <button class="video-poster" data-src="https://player.bilibili.com/player.html?bvid=BV12K4y1U7C4&page=30&high_quality=1&danmaku=0" data-url="https://www.bilibili.com/video/BV12K4y1U7C4?p=30">
+                <span class="play-badge"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m10 8 6 4-6 4Z"/></svg></span>
+                <span><strong>播放教学视频 · 桥式</strong><span>《30个瑜伽体式精讲》第 30 集 · 同一讲师完整示范</span></span>
+              </button>
+              <div class="video-source">来源：哔哩哔哩 · 我是小亓啊《30个瑜伽体式精讲》 · <a href="https://www.bilibili.com/video/BV12K4y1U7C4?p=30" target="_blank" rel="noopener">在 B 站打开</a></div>
+            </div>
+            <div class="ex-body">
+              <div>
+                <h4>动作做法</h4>
+                <ol>
+                  <li>仰卧屈膝，双脚与髋同宽踩地，脚跟靠近臀部，双臂自然放于体侧。</li>
+                  <li>呼气时轻收下肋与腹部，尾骨向脚跟方向延伸。</li>
+                  <li>脚掌与手臂压地，臀部发力将髋部抬起，直到肩、髋、膝大致成一条斜线。</li>
+                  <li>顶点保持 3–5 秒，膝盖对准脚尖，既不外翻也不内扣。</li>
+                  <li>吸气时从上背开始逐节缓慢落下，最后放松骨盆。</li>
+                  <li>每次之间完全放松，重复 8–12 次。</li>
+                </ol>
+              </div>
+              <div>
+                <h4>标准要点</h4>
+                <ul>
+                  <li>膝盖与脚尖同向，不外翻也不内扣。</li>
+                  <li>用臀肌发力抬髋，肋骨不外翻，腰椎不过度后弯。</li>
+                  <li>颈部保持中立，不左右转动，肩胛骨轻收。</li>
+                  <li>双脚掌均匀压地，脚跟不离地。</li>
+                </ul>
+                <h4>呼吸配合</h4>
+                <p>抬髋时呼气，顶点保持自然呼吸，落下时吸气，不憋气。</p>
+              </div>
+            </div>
+            <div class="caution">
+              <div><h4>常见错误</h4><ul><li>膝盖外翻或内扣。</li><li>腰部过度后弯、肋骨外翻，髋部抬得过高。</li><li>脚跟离地，重心压到脚尖。</li><li>颈部转动或耸肩。</li></ul></div>
+              <div><h4>不适合练习的情况</h4><p>颈部损伤、腰椎滑脱、严重骨质疏松或孕晚期应避免；出现腰痛立即降低高度或停止。</p></div>
+            </div>
+          </article>
+        </div>
+        <p class="fineprint">
+          视频来源统一为哔哩哔哩 UP 主「我是小亓啊」的《30个瑜伽体式精讲》，同一讲师、同一课程、分集讲解，便于逐式对照。
+          训练中不应出现疼痛、麻木或眩晕；出现不适请立即停止。
+        </p>
+      </div>
+    </section>
+
+    <section id="review">
+      <div class="wrap">
+        <div class="sec-head"><span class="sec-num">05</span><h2>动作纠错：只依据测量证据，不猜测</h2></div>
+        <p class="sec-note">
+          动作纠错在训练软件的第 3 步完成。每一条错误都必须能追溯到「测了什么、测到多少、标准是多少」。
+          如果关键点不足或视角不适合，系统会直接标记“不可评估”，不会给分，也不会编造错误。
+        </p>
+        <div class="review-grid">
+          <div class="review-card"><b>1. 先判断能不能评</b><p>全身未入镜、关键关节被遮挡、关键点平均可见度低于 50%，都直接判为不可评估。</p></div>
+          <div class="review-card"><b>2. 只评价可测量项</b><p>肩线角、肩髋平行度、肘角、头颈偏移、双侧高差、帧间稳定性等，全部由关键点几何计算。</p></div>
+          <div class="review-card"><b>3. 结论必须带证据</b><p>每条错误都显示实测值与判定标准；未观测到的维度不计分，也不推测“可能存在的问题”。</p></div>
+        </div>
+        <div class="evidence-demo">
+          <strong>示例：一条合格的纠错记录应该长这样</strong>
+          <p class="measured">实测：肩线相对水平约 9.2°</p>
+          <p>判定标准：≤5° 为理想，&gt;8° 需关注。该问题在 7/12 个有效采样帧中出现。</p>
+          <p>修正：降低手臂高度，先沉肩，再让两侧肩峰保持同一水平线。</p>
+          <p>如果只能测到 1 个维度或关键点缺失，系统不会输出上面的结论，而是显示“不可评估”并说明原因。</p>
+        </div>
+        <div class="cta" style="margin-top:24px">
+          <div>
+            <h2>开始逐动作纠错</h2>
+            <p>进入训练软件，按顺序完成：确认体态报告 → 查看瑜伽计划 → 上传练习照片或视频获取评分与纠错。</p>
+          </div>
+          <a class="btn" href="./app.html">打开训练软件</a>
+        </div>
+        <p class="fineprint">
+          本页与训练软件均不构成医疗诊断、治疗建议或疗效承诺。如有持续疼痛、麻木、眩晕或明显不对称，请咨询医生或专业康复人员。
+        </p>
+      </div>
+    </section>
+
+    <footer>
+      <div class="wrap">
+        <p>数据来源：本页 10 项已测指标由 MediaPipe Pose Landmarker（lite）对本人 2026-11-16 拍摄的照片离线计算得出；第 11–12 项因缺少独立右侧照片而未采集。</p>
+        <p>形体智练 · FormPilot · 照片与关键点数据仅保存在本页与本地浏览器中，不上传服务器。</p>
+      </div>
+    </footer>
+
+    <script id="profile-data" type="application/json">{"generatedAt":"2026-11-16","source":"MediaPipe Pose Landmarker (lite) 离线提取","images":{"front":{"file":"case-assets/front.jpg","width":825,"height":1100,"landmarks":[{"x":0.51854,"y":0.29886,"z":-0.24521,"visibility":1.0},{"x":0.52805,"y":0.28742,"z":-0.2073,"visibility":0.9999},{"x":0.53484,"y":0.28784,"z":-0.20719,"visibility":0.9999},{"x":0.53972,"y":0.28829,"z":-0.20723,"visibility":0.9999},{"x":0.50737,"y":0.28745,"z":-0.21343,"visibility":0.9999},{"x":0.50019,"y":0.28791,"z":-0.21351,"visibility":0.9999},{"x":0.49395,"y":0.28848,"z":-0.21345,"visibility":0.9999},{"x":0.5473,"y":0.29552,"z":-0.01081,"visibility":0.9999},{"x":0.4848,"y":0.29598,"z":-0.03655,"visibility":0.9999},{"x":0.5321,"y":0.31334,"z":-0.17294,"visibility":0.9999},{"x":0.50495,"y":0.31306,"z":-0.18112,"visibility":0.9999},{"x":0.60573,"y":0.38229,"z":0.08606,"visibility":0.9999},{"x":0.43877,"y":0.39006,"z":0.03649,"visibility":0.9998},{"x":0.61941,"y":0.48605,"z":0.16531,"visibility":0.9586},{"x":0.434,"y":0.49424,"z":0.07488,"visibility":0.9634},{"x":0.63023,"y":0.57977,"z":0.03655,"visibility":0.959},{"x":0.41445,"y":0.58846,"z":-0.04062,"visibility":0.9667},{"x":0.6356,"y":0.60887,"z":0.00622,"visibility":0.9393},{"x":0.40904,"y":0.61977,"z":-0.08599,"visibility":0.9507},{"x":0.6288,"y":0.60723,"z":-0.05641,"visibility":0.9438},{"x":0.41714,"y":0.61959,"z":-0.13389,"visibility":0.9545},{"x":0.62596,"y":0.59825,"z":0.00969,"visibility":0.9426},{"x":0.42427,"y":0.60709,"z":-0.06205,"visibility":0.9513},{"x":0.57765,"y":0.57171,"z":0.01897,"visibility":0.9998},{"x":0.47644,"y":0.57356,"z":-0.01916,"visibility":0.9997},{"x":0.57521,"y":0.75885,"z":-0.08344,"visibility":0.9775},{"x":0.48341,"y":0.76084,"z":-0.11423,"visibility":0.9827},{"x":0.56059,"y":0.92691,"z":-0.02731,"visibility":0.9567},{"x":0.51251,"y":0.92171,"z":-0.08094,"visibility":0.9743},{"x":0.55627,"y":0.94151,"z":-0.03243,"visibility":0.5887},{"x":0.51437,"y":0.94253,"z":-0.08995,"visibility":0.6199},{"x":0.56405,"y":0.97768,"z":-0.23062,"visibility":0.9497},{"x":0.51226,"y":0.97672,"z":-0.2981,"visibility":0.9631}]},"back":{"file":"case-assets/back.jpg","width":825,"height":1100,"landmarks":[{"x":0.53996,"y":0.27134,"z":0.30372,"visibility":0.9998},{"x":0.53182,"y":0.26052,"z":0.26262,"visibility":0.9996},{"x":0.52528,"y":0.26005,"z":0.26254,"visibility":0.9996},{"x":0.51856,"y":0.25986,"z":0.2626,"visibility":0.9996},{"x":0.54908,"y":0.26209,"z":0.24907,"visibility":0.9996},{"x":0.55461,"y":0.26287,"z":0.2489,"visibility":0.9996},{"x":0.55999,"y":0.26353,"z":0.24892,"visibility":0.9996},{"x":0.50738,"y":0.26725,"z":0.1303,"visibility":0.9994},{"x":0.56351,"y":0.27049,"z":0.07195,"visibility":0.9994},{"x":0.52679,"y":0.28315,"z":0.26694,"visibility":0.9997},{"x":0.54876,"y":0.2848,"z":0.24983,"visibility":0.9995},{"x":0.43709,"y":0.35089,"z":0.08197,"visibility":0.9998},{"x":0.61928,"y":0.35622,"z":-0.03377,"visibility":0.9998},{"x":0.41512,"y":0.46766,"z":0.08905,"visibility":0.9165},{"x":0.62343,"y":0.46587,"z":-0.03437,"visibility":0.9797},{"x":0.42671,"y":0.5587,"z":0.10441,"visibility":0.7023},{"x":0.626,"y":0.56175,"z":0.03843,"visibility":0.8809},{"x":0.41885,"y":0.57917,"z":0.10727,"visibility":0.6035},{"x":0.63285,"y":0.58724,"z":0.0215,"visibility":0.7958},{"x":0.42421,"y":0.57593,"z":0.08447,"visibility":0.5899},{"x":0.62673,"y":0.58537,"z":0.01855,"visibility":0.7867},{"x":0.42851,"y":0.56867,"z":0.0981,"visibility":0.564},{"x":0.6234,"y":0.57535,"z":0.03866,"visibility":0.7451},{"x":0.47343,"y":0.55872,"z":0.04262,"visibility":0.9996},{"x":0.57427,"y":0.55907,"z":-0.04262,"visibility":0.9997},{"x":0.47998,"y":0.73726,"z":0.0975,"visibility":0.876},{"x":0.57046,"y":0.73845,"z":-0.03097,"visibility":0.9624},{"x":0.49447,"y":0.9032,"z":0.12925,"visibility":0.9049},{"x":0.54864,"y":0.90596,"z":0.04111,"visibility":0.948},{"x":0.49268,"y":0.93221,"z":0.12864,"visibility":0.8275},{"x":0.54574,"y":0.93225,"z":0.04635,"visibility":0.9229},{"x":0.48877,"y":0.93542,"z":0.03879,"visibility":0.7759},{"x":0.54127,"y":0.93028,"z":-0.04199,"visibility":0.8246}]},"side":{"file":"case-assets/side.jpg","width":825,"height":1100,"landmarks":[{"x":0.54888,"y":0.35911,"z":-0.096,"visibility":0.9998},{"x":0.54082,"y":0.34462,"z":-0.0802,"visibility":0.9997},{"x":0.53996,"y":0.34403,"z":-0.0801,"visibility":0.9997},{"x":0.53917,"y":0.34348,"z":-0.08,"visibility":0.9998},{"x":0.53724,"y":0.3438,"z":-0.13375,"visibility":0.9997},{"x":0.53383,"y":0.34269,"z":-0.13397,"visibility":0.9997},{"x":0.53013,"y":0.34165,"z":-0.13393,"visibility":0.9998},{"x":0.51783,"y":0.34599,"z":0.02843,"visibility":0.9994},{"x":0.50638,"y":0.34465,"z":-0.20724,"visibility":0.9995},{"x":0.54377,"y":0.37014,"z":-0.04733,"visibility":0.9993},{"x":0.53912,"y":0.36819,"z":-0.11633,"visibility":0.9993},{"x":0.47946,"y":0.41034,"z":0.20575,"visibility":0.9995},{"x":0.48271,"y":0.40537,"z":-0.31162,"visibility":0.9999},{"x":0.48247,"y":0.51893,"z":0.25658,"visibility":0.1211},{"x":0.48759,"y":0.51709,"z":-0.35578,"visibility":0.9841},{"x":0.51581,"y":0.61448,"z":0.12301,"visibility":0.1346},{"x":0.52263,"y":0.62114,"z":-0.30689,"visibility":0.9305},{"x":0.5186,"y":0.64118,"z":0.11168,"visibility":0.1395},{"x":0.52935,"y":0.64435,"z":-0.34563,"visibility":0.887},{"x":0.52275,"y":0.64115,"z":0.0675,"visibility":0.1405},{"x":0.53665,"y":0.64367,"z":-0.34299,"visibility":0.8812},{"x":0.52151,"y":0.62933,"z":0.09834,"visibility":0.143},{"x":0.53533,"y":0.63676,"z":-0.30264,"visibility":0.8548},{"x":0.48899,"y":0.60223,"z":0.16351,"visibility":0.999},{"x":0.49046,"y":0.59836,"z":-0.16316,"visibility":0.9997},{"x":0.49129,"y":0.76639,"z":0.20416,"visibility":0.3424},{"x":0.49187,"y":0.77267,"z":-0.16724,"visibility":0.9461},{"x":0.48255,"y":0.92098,"z":0.28659,"visibility":0.6027},{"x":0.47763,"y":0.93453,"z":-0.11692,"visibility":0.9505},{"x":0.46079,"y":0.95033,"z":0.28466,"visibility":0.6872},{"x":0.45277,"y":0.96552,"z":-0.11736,"visibility":0.9372},{"x":0.55902,"y":0.94755,"z":0.17532,"visibility":0.751},{"x":0.56105,"y":0.96346,"z":-0.24888,"visibility":0.9471}]},"side_mirror":{"file":"case-assets/side-mirror.jpg","width":825,"height":1100,"landmarks":[{"x":0.45515,"y":0.35099,"z":-0.10052,"visibility":0.9995},{"x":0.46499,"y":0.33869,"z":-0.13682,"visibility":0.9994},{"x":0.46785,"y":0.33836,"z":-0.13685,"visibility":0.9994},{"x":0.47062,"y":0.33813,"z":-0.13691,"visibility":0.9995},{"x":0.46237,"y":0.33885,"z":-0.08387,"visibility":0.9992},{"x":0.46327,"y":0.3386,"z":-0.084,"visibility":0.9991},{"x":0.46418,"y":0.33834,"z":-0.08403,"visibility":0.9992},{"x":0.49219,"y":0.34312,"z":-0.21494,"visibility":0.9991},{"x":0.48311,"y":0.34276,"z":0.02451,"visibility":0.9986},{"x":0.46243,"y":0.363,"z":-0.12233,"visibility":0.9993},{"x":0.45844,"y":0.36319,"z":-0.05237,"visibility":0.9988},{"x":0.5183,"y":0.41068,"z":-0.32612,"visibility":1.0},{"x":0.50254,"y":0.41309,"z":0.18611,"visibility":0.9992},{"x":0.5171,"y":0.51857,"z":-0.38249,"visibility":0.9956},{"x":0.50649,"y":0.52081,"z":0.28719,"visibility":0.0943},{"x":0.47709,"y":0.62796,"z":-0.34557,"visibility":0.9724},{"x":0.4866,"y":0.60928,"z":0.20272,"visibility":0.1398},{"x":0.4682,"y":0.64932,"z":-0.3874,"visibility":0.948},{"x":0.48771,"y":0.63593,"z":0.19154,"visibility":0.1502},{"x":0.46129,"y":0.65018,"z":-0.39126,"visibility":0.9453},{"x":0.47513,"y":0.63727,"z":0.14919,"visibility":0.1551},{"x":0.46346,"y":0.64246,"z":-0.34305,"visibility":0.9312},{"x":0.4819,"y":0.62421,"z":0.17972,"visibility":0.1531},{"x":0.50685,"y":0.61235,"z":-0.16332,"visibility":0.9996},{"x":0.5059,"y":0.60287,"z":0.16342,"visibility":0.9988},{"x":0.50385,"y":0.78218,"z":-0.14887,"visibility":0.9398},{"x":0.50976,"y":0.7715,"z":0.20472,"visibility":0.3878},{"x":0.52287,"y":0.9381,"z":-0.03079,"visibility":0.9569},{"x":0.52376,"y":0.92071,"z":0.3341,"visibility":0.5931},{"x":0.54352,"y":0.96229,"z":-0.02434,"visibility":0.9323},{"x":0.54214,"y":0.94472,"z":0.33818,"visibility":0.6705},{"x":0.43353,"y":0.95961,"z":-0.15619,"visibility":0.9553},{"x":0.44069,"y":0.94174,"z":0.23302,"visibility":0.7355}]}},"metrics":{"front":{"shoulderDiffPct":6.2,"shoulderAngle":3.6,"hipDiffPct":2.4,"trunkOffsetPct":1.9,"higherShoulder":"left","shoulderPixel":{"left":[499.7,420.5],"right":[362.0,429.1]},"hipPixel":{"left":[476.6,628.9],"right":[393.1,630.9]}},"back":{"shoulderDiffPct":3.9,"shoulderAngle":2.2,"hipDiffPct":0.5,"trunkOffsetPct":1.6,"higherShoulder":"left","shoulderPixel":{"left":[360.6,386.0],"right":[510.9,391.8]},"hipPixel":{"left":[390.6,614.6],"right":[473.8,615.0]}},"side":{"side":"right","cva":73.7,"anteriorKnown":true,"earAnterior":true,"roundedOffsetPct":-3.0,"cvaPoints":{"ear":[417.8,379.1],"shoulder":[398.2,445.9],"hip":[404.6,658.2]},"visibility":1.0},"side_mirror":{"side":"left","cva":73.8,"anteriorKnown":true,"earAnterior":true,"roundedOffsetPct":-4.3,"cvaPoints":{"ear":[406.1,377.4],"shoulder":[427.6,451.7],"hip":[418.2,673.6]},"visibility":1.0}}}</script>
+
+    <script>
+      (function () {
+        const data = JSON.parse(document.getElementById('profile-data').textContent);
+        const showSkeleton = { value: true };
+
+        const metrics = [
+          { group: '正面', label: '肩高差 / 肩宽', value: 6.2, unit: '%', ref: '≤ 5%', status: 'warn', max: 12, threshold: 5 },
+          { group: '正面', label: '肩线角', value: 3.6, unit: '°', ref: '≤ 3°', status: 'warn', max: 10, threshold: 3 },
+          { group: '正面', label: '髋部高差 / 髋宽', value: 2.4, unit: '%', ref: '≤ 5%', status: 'ok', max: 10, threshold: 5 },
+          { group: '正面', label: '肩髋中点侧移 / 躯干长', value: 1.9, unit: '%', ref: '≤ 5%', status: 'ok', max: 10, threshold: 5 },
+          { group: '背面', label: '肩高差 / 肩宽', value: 3.9, unit: '%', ref: '≤ 5%', status: 'ok', max: 12, threshold: 5 },
+          { group: '背面', label: '肩线角', value: 2.2, unit: '°', ref: '≤ 3°', status: 'ok', max: 10, threshold: 3 },
+          { group: '背面', label: '髋部高差 / 髋宽', value: 0.5, unit: '%', ref: '≤ 5%', status: 'ok', max: 10, threshold: 5 },
+          { group: '背面', label: '肩髋中点侧移 / 躯干长', value: 1.6, unit: '%', ref: '≤ 5%', status: 'ok', max: 10, threshold: 5 },
+          { group: '侧面（单侧）', label: '近似颅椎角 CVA', value: 73.7, unit: '°', ref: '≥ 50°', status: 'ok', min: 30, max: 90, threshold: 50, higherBetter: true },
+          { group: '侧面（单侧）', label: '肩点相对髋点前移 / 躯干长', value: -3.0, unit: '%', ref: '≤ 10%', status: 'ok', max: 15, threshold: 10, absolute: true }
+        ];
+
+        function renderBars() {
+          const root = document.getElementById('metric-bars');
+          const groups = [...new Set(metrics.map((item) => item.group))];
+          root.innerHTML = groups.map((group) => {
+            const rows = metrics.filter((item) => item.group === group).map((item) => {
+              const value = item.absolute ? Math.abs(item.value) : item.value;
+              const min = Number.isFinite(item.min) ? item.min : 0;
+              const max = item.max;
+              const percent = Math.max(2, Math.min(100, (value - min) / (max - min) * 100));
+              const tick = Math.max(0, Math.min(100, (item.threshold - min) / (max - min) * 100));
+              return `<div class="bar-row">
+                <div class="bar-label">${group} · ${item.label}<small>${item.higherBetter ? '越高越好' : '越低越好'}</small></div>
+                <div class="bar-track"><div class="bar-fill ${item.status}" style="width:${percent}%"></div><div class="bar-tick" style="left:${tick}%"></div></div>
+                <div class="bar-value">${item.value > 0 ? '' : ''}${item.value}${item.unit}</div>
+                <div class="bar-ref">参考 ${item.ref}<br /><span class="tag ${item.status}">${item.status === 'ok' ? '参考范围内' : '需复核'}</span></div>
+              </div>`;
+            }).join('');
+            return `<div class="metric-group"><h3>${group}</h3>${rows}</div>`;
+          }).join('');
+        }
+
+        const CONNECTIONS = [
+          [0, 11], [0, 12], [11, 12], [11, 13], [13, 15], [12, 14], [14, 16],
+          [11, 23], [12, 24], [23, 24], [23, 25], [25, 27], [24, 26], [26, 28],
+          [27, 31], [28, 32], [27, 29], [29, 31], [28, 30], [30, 32],
+          [15, 17], [15, 19], [15, 21], [16, 18], [16, 20], [16, 22], [17, 19], [18, 20]
+        ];
+        const KEY_POINTS = [7, 8, 11, 12, 23, 24, 25, 26];
+
+        function roundRect(ctx, x, y, w, h, r) {
+          ctx.beginPath();
+          ctx.moveTo(x + r, y);
+          ctx.arcTo(x + w, y, x + w, y + h, r);
+          ctx.arcTo(x + w, y + h, x, y + h, r);
+          ctx.arcTo(x, y + h, x, y, r);
+          ctx.arcTo(x, y, x + w, y, r);
+          ctx.closePath();
+        }
+        function label(ctx, text, x, y, color) {
+          ctx.font = '600 12px "PingFang SC", system-ui, sans-serif';
+          const w = ctx.measureText(text).width + 16;
+          const h = 24;
+          let lx = Math.max(4, Math.min(x - w / 2, ctx.canvas.clientWidth - w - 4));
+          let ly = Math.max(4, y - h - 8);
+          ctx.fillStyle = 'rgba(24,63,53,.9)';
+          roundRect(ctx, lx, ly, w, h, 7);
+          ctx.fill();
+          ctx.fillStyle = '#fff';
+          ctx.fillText(text, lx + 8, ly + 16);
+        }
+
+        function drawFigure(figure) {
+          const view = figure.dataset.view;
+          const image = data.images[view];
+          if (!image) return;
+          const img = figure.querySelector('img');
+          const canvas = figure.querySelector('canvas');
+          const box = canvas.parentElement.getBoundingClientRect();
+          if (!box.width || !box.height) return;
+          const dpr = Math.min(window.devicePixelRatio || 1, 2);
+          canvas.width = box.width * dpr;
+          canvas.height = box.height * dpr;
+          const ctx = canvas.getContext('2d');
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          ctx.clearRect(0, 0, box.width, box.height);
+          if (!showSkeleton.value) return;
+
+          const iw = img.naturalWidth || image.width;
+          const ih = img.naturalHeight || image.height;
+          const scale = Math.min(box.width / iw, box.height / ih);
+          const dw = iw * scale;
+          const dh = ih * scale;
+          const ox = (box.width - dw) / 2;
+          const oy = (box.height - dh) / 2;
+          const pt = (index) => ({ x: ox + image.landmarks[index].x * dw, y: oy + image.landmarks[index].y * dh });
+          const lw = Math.max(1.6, box.width / 190);
+
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+          ctx.strokeStyle = 'rgba(24,63,53,.32)';
+          ctx.lineWidth = Math.max(1.2, lw * 0.7);
+          for (const [a, b] of CONNECTIONS) {
+            if ((image.landmarks[a].visibility || 0) < 0.5 || (image.landmarks[b].visibility || 0) < 0.5) continue;
+            const p1 = pt(a);
+            const p2 = pt(b);
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+          }
+          for (const index of KEY_POINTS) {
+            if ((image.landmarks[index].visibility || 0) < 0.5) continue;
+            const p = pt(index);
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, lw * 1.5, 0, Math.PI * 2);
+            ctx.fillStyle = '#fff';
+            ctx.fill();
+            ctx.strokeStyle = '#183f35';
+            ctx.lineWidth = lw * 0.9;
+            ctx.stroke();
+          }
+
+          if (view === 'front' || view === 'back') {
+            const left = pt(11);
+            const right = pt(12);
+            const leftHip = pt(23);
+            const rightHip = pt(24);
+            const m = data.metrics[view];
+
+            ctx.strokeStyle = '#c2683f';
+            ctx.lineWidth = lw * 1.7;
+            ctx.beginPath();
+            ctx.moveTo(left.x, left.y);
+            ctx.lineTo(right.x, right.y);
+            ctx.stroke();
+
+            ctx.strokeStyle = '#2f7d5d';
+            ctx.lineWidth = lw * 1.5;
+            ctx.beginPath();
+            ctx.moveTo(leftHip.x, leftHip.y);
+            ctx.lineTo(rightHip.x, rightHip.y);
+            ctx.stroke();
+
+            const higher = left.y <= right.y ? left : right;
+            const lower = left.y <= right.y ? right : left;
+            ctx.strokeStyle = 'rgba(24,63,53,.65)';
+            ctx.lineWidth = 1.3;
+            ctx.setLineDash([5, 4]);
+            ctx.beginPath();
+            ctx.moveTo(higher.x, higher.y - 18);
+            ctx.lineTo(higher.x, lower.y);
+            ctx.lineTo(lower.x, lower.y);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            label(ctx, `肩线 ${m.shoulderAngle}°`, (left.x + right.x) / 2, (left.y + right.y) / 2, '#c2683f');
+            label(ctx, `肩高差 ${m.shoulderDiffPct}%`, higher.x, lower.y, '#2f7d5d');
+          } else {
+            const side = data.metrics[view].side;
+            const indices = side === 'left' ? [7, 11, 23] : [8, 12, 24];
+            const ear = pt(indices[0]);
+            const shoulder = pt(indices[1]);
+            const hip = pt(indices[2]);
+            const m = data.metrics[view];
+
+            ctx.strokeStyle = 'rgba(24,63,53,.65)';
+            ctx.lineWidth = 1.3;
+            ctx.setLineDash([5, 4]);
+            ctx.beginPath();
+            ctx.moveTo(ear.x, ear.y);
+            ctx.lineTo(ear.x, shoulder.y);
+            ctx.lineTo(shoulder.x, shoulder.y);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.strokeStyle = '#c2683f';
+            ctx.lineWidth = lw * 1.7;
+            ctx.beginPath();
+            ctx.moveTo(ear.x, ear.y);
+            ctx.lineTo(shoulder.x, shoulder.y);
+            ctx.stroke();
+
+            ctx.strokeStyle = '#2f7d5d';
+            ctx.lineWidth = lw * 1.5;
+            ctx.beginPath();
+            ctx.moveTo(shoulder.x, shoulder.y);
+            ctx.lineTo(hip.x, hip.y);
+            ctx.stroke();
+
+            label(ctx, `CVA ${m.cva}°`, (ear.x + shoulder.x) / 2 + 34, (ear.y + shoulder.y) / 2, '#c2683f');
+          }
+        }
+
+        function drawAll() {
+          document.querySelectorAll('#photo-grid figure').forEach(drawFigure);
+        }
+
+        renderBars();
+
+        const images = [...document.querySelectorAll('#photo-grid img')];
+        let pending = images.length;
+        const start = () => {
+          pending -= 1;
+          if (pending <= 0) drawAll();
+        };
+        images.forEach((img) => {
+          if (img.complete && img.naturalWidth) start();
+          else {
+            img.addEventListener('load', start, { once: true });
+            img.addEventListener('error', start, { once: true });
+          }
+        });
+
+        let resizeTimer = null;
+        window.addEventListener('resize', () => {
+          clearTimeout(resizeTimer);
+          resizeTimer = setTimeout(drawAll, 160);
+        });
+
+        const toggle = document.getElementById('skeleton-toggle');
+        toggle.addEventListener('click', () => {
+          showSkeleton.value = !showSkeleton.value;
+          toggle.setAttribute('aria-pressed', String(showSkeleton.value));
+          toggle.textContent = showSkeleton.value ? '隐藏骨架标注' : '显示骨架标注';
+          drawAll();
+        });
+
+        document.addEventListener('click', (event) => {
+          const poster = event.target.closest('.video-poster');
+          if (!poster) return;
+          const src = poster.dataset.src;
+          const url = poster.dataset.url;
+          if (!src) return;
+          const wrap = poster.parentElement;
+          wrap.innerHTML = `<div class="video-frame"><iframe src="${src}" title="瑜伽动作教学视频" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen loading="lazy" referrerpolicy="no-referrer"></iframe></div><div class="video-source">来源：哔哩哔哩 · 我是小亓啊《30个瑜伽体式精讲》 · <a href="${url}" target="_blank" rel="noopener">在 B 站打开</a></div>`;
+        });
+      })();
+    </script>
   </body>
 </html>

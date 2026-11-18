@@ -43,8 +43,8 @@ const viewDefs = [
 ];
 const stepDefs = [
   { id: 1, name: '体态评估', sub: '上传四视图', icon: 'scan' },
-  { id: 2, name: '训练计划', sub: '针对性普拉提', icon: 'plan' },
-  { id: 3, name: '动作纠错', sub: '照片或视频评分', icon: 'score' },
+  { id: 2, name: '训练计划', sub: '瑜伽基础动作', icon: 'plan' },
+  { id: 3, name: '动作纠错', sub: '按测量证据评分', icon: 'score' },
   { id: 4, name: '完整报告', sub: '汇总与导出', icon: 'file' }
 ];
 function freshState() {
@@ -159,7 +159,7 @@ function renderAssessment() {
 }
 function renderPlanStep() {
   const p = state.preferences;
-  return `${heading('Step 02 · Personalized Pilates', '你的针对性普拉提计划', '计划仅围绕评估中有依据的姿势倾向生成。先熟悉动作，再进入拍照或视频纠错。', `${state.plan.length} 个动作`)}
+  return `${heading('Step 02 · Personalized Yoga', '你的瑜伽基础训练计划', '计划仅围绕评估中有依据的姿势倾向生成。每个动作配详细文字讲解与同一讲师的教学视频，先熟悉动作，再进入拍照或视频纠错。', `${state.plan.length} 个动作`)}
     <section class="card section-card">
       <div class="section-head"><div><h2>训练设置</h2><p>调整后计划会即时更新，不修改已确认的体态报告。</p></div><span class="section-index">居家 · 无器械</span></div>
       <div class="preferences">
@@ -175,19 +175,31 @@ function renderPlanStep() {
       <div class="action-bar"><span class="action-hint">请先熟悉并尝试以上动作，确认可无痛完成</span><button class="btn btn-primary btn-large" data-action="confirm-plan">开始动作练习与纠错${icon('arrow')}</button></div>
     </section>`;
 }
+function renderVideoBlock(ex) {
+  const video = ex.video;
+  if (!video) return '';
+  const src = `https://player.bilibili.com/player.html?bvid=${video.bvid}&page=${video.page}&high_quality=1&danmaku=0`;
+  return `<div class="exercise-video"><div class="video-poster" data-action="play-video" data-src="${e(src)}"><span class="play-badge">${icon('play', 26)}</span><div><strong>播放教学视频</strong><span>${e(video.title)}</span></div></div><div class="video-source">来源：${e(video.platform)} · ${e(video.teacher)}《30个瑜伽体式精讲》第 ${video.page} 集 · 同一讲师完整示范 <a href="${e(video.url)}" target="_blank" rel="noopener">在 B 站打开</a></div></div>`;
+}
 function renderExerciseCard(ex, i, open = false) {
-  return `<details class="exercise-card" ${open ? 'open' : ''}><summary class="exercise-summary"><span class="exercise-number">${String(i + 1).padStart(2, '0')}</span><div class="exercise-title"><h3>${e(ex.name)}</h3><p>${e(ex.category)} · ${e(ex.target)}</p></div><div class="exercise-dose">${e(ex.dose)}</div></summary><div class="exercise-detail"><div><h4>动作做法</h4><ol>${ex.steps.map(x => `<li>${e(x)}</li>`).join('')}</ol></div><div><h4>标准要点</h4><ul>${ex.keyPoints.map(x => `<li>${e(x)}</li>`).join('')}</ul></div><div class="exercise-tags"><span>停留 ${e(ex.hold || '按动作节奏')}</span><span>组数 ${e(ex.sets)} 组</span>${ex.commonErrors.slice(0, 2).map(x => `<span>避免：${e(x)}</span>`).join('')}</div></div></details>`;
+  return `<details class="exercise-card" ${open ? 'open' : ''}><summary class="exercise-summary"><span class="exercise-number">${String(i + 1).padStart(2, '0')}</span><div class="exercise-title"><h3>${e(ex.name)}${ex.sanskrit ? `<span class="exercise-sanskrit">${e(ex.sanskrit)}</span>` : ''}</h3><p>${e(ex.category)} · ${e(ex.target)}</p></div><div class="exercise-dose">${e(ex.dose)}</div></summary><div class="exercise-detail">
+    ${renderVideoBlock(ex)}
+    <div class="exercise-text-grid"><div><h4>动作做法</h4><ol>${ex.steps.map(x => `<li>${e(x)}</li>`).join('')}</ol></div><div><h4>标准要点</h4><ul>${ex.keyPoints.map(x => `<li>${e(x)}</li>`).join('')}</ul><h4>呼吸配合</h4><p>${e(ex.breath || '保持自然呼吸，不憋气。')}</p></div></div>
+    <div class="exercise-caution"><div><h4>常见错误</h4><ul>${ex.commonErrors.map(x => `<li>${e(x)}</li>`).join('')}</ul></div><div><h4>不适合练习的情况</h4><p>${e(ex.contraindications || '出现疼痛、麻木或眩晕时立即停止。')}</p></div></div>
+    <div class="exercise-tags"><span>停留 ${e(ex.hold || '按动作节奏')}</span><span>组数 ${e(ex.sets)} 组</span><span>拍摄：${e(ex.mediaTip || '全身入镜')}</span></div>
+  </div></details>`;
 }
 function currentExercise() {
   return state.plan.find(x => x.id === state.activeExercise) || state.plan[0];
 }
+const hasValidScore = entry => Boolean(entry?.result && entry.result.assessable !== false);
 function renderPracticeStep() {
   const ex = currentExercise();
   const entry = state.practice[ex.id] || {};
-  const scoredCount = state.plan.filter(x => state.practice[x.id]?.result).length;
+  const scoredCount = state.plan.filter(x => hasValidScore(state.practice[x.id])).length;
   const allScored = scoredCount === state.plan.length;
-  return `${heading('Step 03 · Movement review', '对照标准，完成动作纠错', '逐个动作上传练习照片或视频。系统只评价当前媒体中可观察的内容，不会凭空判断呼吸或遮挡关节。', `${scoredCount} / ${state.plan.length} 已评分`)}
-    <div class="practice-tabs">${state.plan.map((item, i) => `<button class="practice-tab ${item.id === ex.id ? 'active' : ''} ${state.practice[item.id]?.result ? 'scored' : ''}" data-action="select-exercise" data-id="${item.id}">${state.practice[item.id]?.result ? icon('checkCircle', 14) : `<span>${i + 1}</span>`}${e(item.name)}</button>`).join('')}</div>
+  return `${heading('Step 03 · Movement review', '对照标准，完成动作纠错', '逐个动作上传练习照片或视频。系统只对能够测到的关节角度、对称性与稳定性下结论；证据不足时直接标记不可评估，不猜测、不给分。', `${scoredCount} / ${state.plan.length} 已评分`)}
+    <div class="practice-tabs">${state.plan.map((item, i) => `<button class="practice-tab ${item.id === ex.id ? 'active' : ''} ${hasValidScore(state.practice[item.id]) ? 'scored' : ''}" data-action="select-exercise" data-id="${item.id}">${hasValidScore(state.practice[item.id]) ? icon('checkCircle', 14) : `<span>${i + 1}</span>`}${e(item.name)}</button>`).join('')}</div>
     <div class="practice-layout">
       <section class="standard-panel"><span class="tag">标准动作 ${String(state.plan.indexOf(ex) + 1).padStart(2, '0')}</span><h2>${e(ex.name)}</h2><p class="standard-target">${e(ex.target)}</p><div class="standard-dose"><strong>训练剂量</strong><br>${e(ex.dose)} · 端点停留 ${e(ex.hold || '按节奏')} · 组数 ${e(ex.sets)} 组</div><ol>${ex.steps.map(x => `<li>${e(x)}</li>`).join('')}</ol><div class="standard-cues"><strong>评分重点</strong>${ex.keyPoints.map(x => `<span>· ${e(x)}</span>`).join('')}</div></section>
       <section class="upload-panel"><div class="section-head"><div><h3>上传本动作练习媒体</h3><p>${e(ex.mediaTip)}</p></div><span class="section-index">照片 / 视频</span></div>
@@ -207,11 +219,18 @@ function renderPracticeMedia(entry) {
   return `<img src="${e(entry.url)}" alt="练习动作预览">`;
 }
 function renderScore(result) {
+  if (result.assessable === false) {
+    return `<section class="score-card"><div class="section-head"><div><h2>本次媒体无法评估</h2><p>${result.mediaType === 'video' ? '视频动态分析' : '静态照片分析'} · 关键点可见度 ${confidenceText(result.confidence)}</p></div><span class="tag bad">不可评估</span></div>
+      <div class="notice warning" style="margin-top:16px">${icon('alert')}<div><strong>系统不会在证据不足时给分</strong>${e(result.reason)}</div></div>
+      <p class="small muted" style="margin-top:12px">请保证全身完整入镜、光线均匀、衣物贴身且无遮挡，然后重新上传评分。动作纠错只对能够测量到的关节角度与对称性下结论，不做任何推测。</p>
+    </section>`;
+  }
   const circumference = 2 * Math.PI * 45;
   const offset = circumference * (1 - result.score / 100);
   return `<section class="score-card"><div class="section-head"><div><h2>动作评分结果</h2><p>${result.mediaType === 'video' ? `动态分析 · ${result.frameCount} 个采样帧` : '静态照片分析'} · 可信度 ${confidenceText(result.confidence)}</p></div><span class="tag ${result.score >= 85 ? 'good' : result.score >= 60 ? 'warn' : 'bad'}">${result.score >= 85 ? '动作较好' : result.score >= 60 ? '仍需调整' : '建议退阶练习'}</span></div>
-    <div class="score-head"><div class="score-ring"><svg viewBox="0 0 110 110"><circle class="ring-bg" cx="55" cy="55" r="45"></circle><circle class="ring-value" cx="55" cy="55" r="45" stroke-dasharray="${circumference}" stroke-dashoffset="${offset}"></circle></svg><div class="score-number"><strong>${result.score}</strong><span>/ 100 分</span></div></div><div class="dimension-list">${result.dimensions.map(d => `<div class="dimension-row"><span>${e(d.name)}</span><div class="dimension-track"><div class="dimension-fill" style="width:${d.observed === false ? 0 : Math.max(0, d.score / d.max * 100)}%"></div></div><span class="dimension-score">${d.observed === false ? '不可判定' : `${d.score}/${d.max}`}</span></div>`).join('')}</div></div>
-    ${result.errors.length ? `<div class="error-list">${result.errors.map(err => `<div class="error-item"><strong>${e(err.title)}</strong><p>${e(err.evidence)}</p><p><b>标准：</b>${e(err.standard)}</p></div>`).join('')}</div>` : `<div class="empty-state" style="margin-top:20px"><div class="empty-icon">${icon('checkCircle', 23)}</div><h3>未发现明显动作偏差</h3><p>继续保持当前排列与控制，注意不要在后续重复中耸肩。</p></div>`}
+    <div class="score-head"><div class="score-ring"><svg viewBox="0 0 110 110"><circle class="ring-bg" cx="55" cy="55" r="45"></circle><circle class="ring-value" cx="55" cy="55" r="45" stroke-dasharray="${circumference}" stroke-dashoffset="${offset}"></circle></svg><div class="score-number"><strong>${result.score}</strong><span>/ 100 分</span></div></div><div class="dimension-list">${result.dimensions.map(d => `<div class="dimension-row"><span>${e(d.name)}</span><div class="dimension-track"><div class="dimension-fill" style="width:${d.observed === false ? 0 : Math.max(0, d.score / d.max * 100)}%"></div></div><span class="dimension-score">${d.observed === false ? '未观测' : `${d.score}/${d.max}`}</span></div>`).join('')}</div></div>
+    ${result.metrics.length ? `<div class="metric-table-wrap" style="margin-top:18px"><table class="metric-table"><thead><tr><th>本次测量项</th><th>测量值</th><th>判定参考</th><th>结论</th></tr></thead><tbody>${result.metrics.map(m => `<tr><td>${e(m.label)}</td><td>${e(m.value)}</td><td class="muted">${e(m.reference)}</td><td>${statusTag(m.status, m.status)}</td></tr>`).join('')}</tbody></table></div>` : ''}
+    ${result.errors.length ? `<div class="error-list">${result.errors.map(err => `<div class="error-item"><strong>${e(err.title)}</strong>${err.measured ? `<p class="error-measured">${e(err.measured)}</p>` : ''}<p>${e(err.evidence)}</p><p><b>判定标准：</b>${e(err.standard)}</p></div>`).join('')}</div>` : `<div class="empty-state" style="margin-top:20px"><div class="empty-icon">${icon('checkCircle', 23)}</div><h3>本次可测指标均在参考范围内</h3><p>报告只针对已测量到的项目下结论，不代表未观测项目也完全正确。</p></div>`}
     ${result.corrections.length ? `<div class="correction-box"><strong>修正建议</strong><ul>${result.corrections.map(x => `<li>${e(x)}</li>`).join('')}</ul></div>` : ''}
   </section>`;
 }
@@ -224,16 +243,16 @@ function reportDocumentMarkup() {
   const a = state.assessment;
   const date = new Date().toLocaleString('zh-CN', { hour12: false });
   return `<article class="report-document" id="report-document">
-    <div class="report-cover"><div><div class="eyebrow">FormPilot · Personal report</div><h1>形体塑身一体化报告</h1><p>生成时间：${date} · 体态评估 / 普拉提计划 / 动作纠错</p></div><div class="report-seal">LOCAL<br>ANALYSIS</div></div>
+    <div class="report-cover"><div><div class="eyebrow">FormPilot · Personal report</div><h1>形体塑身一体化报告</h1><p>生成时间：${date} · 体态评估 / 瑜伽基础训练 / 动作纠错</p></div><div class="report-seal">LOCAL<br>ANALYSIS</div></div>
     <section class="report-section"><div class="report-section-title"><span class="report-section-number">01</span><h2>体态评估报告</h2></div>
       <div class="metric-table-wrap"><table class="metric-table"><thead><tr><th>指标</th><th>结果</th><th>筛查参考</th><th>结论</th></tr></thead><tbody>${a.metrics.map(m => `<tr><td>${e(m.label)}</td><td>${e(m.value)}</td><td>${e(m.reference)}</td><td>${e(m.statusText || m.status)}</td></tr>`).join('')}</tbody></table></div>
       ${a.findings.length ? `<div class="finding-list" style="margin-top:18px">${a.findings.map(f => `<div class="finding-item"><h3>${e(f.title)}</h3><p><strong>依据：</strong>${e(f.evidence)}</p><p><strong>可能影响：</strong>${e(f.impact)}</p></div>`).join('')}</div>` : `<div class="notice info" style="margin-top:18px">${icon('checkCircle')}<div>本次指标未发现达到筛查阈值的明显姿势偏移。</div></div>`}
       <ul class="limitation-list" style="margin-top:18px">${a.limitations.map(x => `<li>${e(x)}</li>`).join('')}</ul>
     </section>
-    <section class="report-section"><div class="report-section-title"><span class="report-section-number">02</span><h2>个性化普拉提训练计划</h2></div><p class="muted">训练目标：${e(state.preferences.goal)} · 每周 4 次 · 每次约 ${state.preferences.duration} 分钟</p><div class="plan-list">${state.plan.map((ex, i) => renderExerciseCard(ex, i, true)).join('')}</div></section>
+    <section class="report-section"><div class="report-section-title"><span class="report-section-number">02</span><h2>个性化瑜伽基础训练计划</h2></div><p class="muted">训练目标：${e(state.preferences.goal)} · 每周 4 次 · 每次约 ${state.preferences.duration} 分钟</p><div class="plan-list">${state.plan.map((ex, i) => renderExerciseCard(ex, i, true)).join('')}</div></section>
     <section class="report-section"><div class="report-section-title"><span class="report-section-number">03</span><h2>动作纠错评分结果</h2></div>
       <div class="report-score-table">${state.plan.map(ex => { const r = state.practice[ex.id].result; return `<div class="report-score-item"><strong>${r.score}<small>/100</small></strong><span>${e(ex.name)} · ${r.mediaType === 'video' ? '视频' : '照片'}</span></div>`; }).join('')}</div>
-      ${state.plan.map(ex => { const r = state.practice[ex.id].result; return `<div class="report-section"><h3>${e(ex.name)} · ${r.score} 分</h3><p class="small muted">分析${r.mediaType === 'video' ? `视频 ${r.frameCount} 帧` : '静态照片'} · 可信度 ${confidenceText(r.confidence)}</p>${r.errors.length ? `<div class="error-list">${r.errors.map(err => `<div class="error-item"><strong>${e(err.title)}</strong><p>${e(err.evidence)}</p><p><b>标准：</b>${e(err.standard)}</p></div>`).join('')}</div>` : `<p class="muted">未发现明显动作偏差。</p>`}${r.corrections.length ? `<div class="correction-box"><strong>修正建议</strong><ul>${r.corrections.map(x => `<li>${e(x)}</li>`).join('')}</ul></div>` : ''}</div>`; }).join('')}
+      ${state.plan.map(ex => { const r = state.practice[ex.id].result; return `<div class="report-section"><h3>${e(ex.name)} · ${r.score} 分</h3><p class="small muted">分析${r.mediaType === 'video' ? `视频 ${r.frameCount} 帧` : '静态照片'} · 可信度 ${confidenceText(r.confidence)}</p>${r.errors.length ? `<div class="error-list">${r.errors.map(err => `<div class="error-item"><strong>${e(err.title)}</strong>${err.measured ? `<p>${e(err.measured)}</p>` : ''}<p>${e(err.evidence)}</p><p><b>判定标准：</b>${e(err.standard)}</p></div>`).join('')}</div>` : `<p class="muted">本次可测指标均在参考范围内。</p>`}${r.corrections.length ? `<div class="correction-box"><strong>修正建议</strong><ul>${r.corrections.map(x => `<li>${e(x)}</li>`).join('')}</ul></div>` : ''}</div>`; }).join('')}
     </section>
     <footer class="report-footer">本报告由浏览器端 MediaPipe 关键点模型与规则量表生成，仅作训练和复评参考，不替代医疗诊断、影像学检查或专业康复治疗。如出现疼痛、麻木、眩晕或持续不适，请停止训练并寻求专业帮助。</footer>
   </article>`;
@@ -315,8 +334,9 @@ function handlePracticeFile(file) {
   render();
 }
 function exportReport() {
-  const styles = `body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans SC',sans-serif;color:#17362e;line-height:1.65;max-width:1000px;margin:35px auto;padding:0 24px}h1,h2,h3{line-height:1.35}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:10px;border-bottom:1px solid #dfe4dd;font-size:13px}.report-cover{border-bottom:2px solid #183f35;margin-bottom:28px}.report-seal{display:none}.report-section{margin-top:30px}.report-section-title{display:flex;gap:10px;align-items:center}.report-section-number{background:#183f35;color:white;padding:4px 8px;border-radius:6px}.finding-item,.error-item,.correction-box{padding:14px;margin:10px 0;border-radius:10px;background:#f5f4ee}.error-item{background:#fff0ed}.correction-box{background:#eef3ec}.exercise-card{display:block;border:1px solid #dfe4dd;padding:16px;margin:12px 0;border-radius:10px}.exercise-summary{display:block}.exercise-number{font-weight:bold}.exercise-dose{font-weight:bold}.exercise-detail{display:block}.exercise-tags{display:flex;gap:8px;flex-wrap:wrap}.exercise-tags span{background:#f5f4ee;padding:4px 8px}.report-score-table{display:flex;gap:10px;flex-wrap:wrap}.report-score-item{border:1px solid #dfe4dd;padding:12px;min-width:130px}.report-score-item strong{font-size:25px;display:block}.report-footer{margin-top:30px;border-top:1px solid #ddd;padding-top:16px;font-size:12px;color:#587068}.muted{color:#587068}.small{font-size:12px}.eyebrow{font-size:11px;color:#d66f4b;letter-spacing:.1em}.metric-table-wrap{overflow:auto}@media print{body{margin:0}.exercise-card,.report-section{break-inside:avoid}}`;
-  const html = `<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>形体塑身一体化报告</title><style>${styles}</style></head><body>${reportDocumentMarkup()}</body></html>`;
+  const styles = `body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans SC',sans-serif;color:#17362e;line-height:1.65;max-width:1000px;margin:35px auto;padding:0 24px}h1,h2,h3{line-height:1.35}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:10px;border-bottom:1px solid #dfe4dd;font-size:13px}.report-cover{border-bottom:2px solid #183f35;margin-bottom:28px}.report-seal{display:none}.report-section{margin-top:30px}.report-section-title{display:flex;gap:10px;align-items:center}.report-section-number{background:#183f35;color:white;padding:4px 8px;border-radius:6px}.finding-item,.error-item,.correction-box{padding:14px;margin:10px 0;border-radius:10px;background:#f5f4ee}.error-item{background:#fff0ed}.correction-box{background:#eef3ec}.exercise-card{display:block;border:1px solid #dfe4dd;padding:16px;margin:12px 0;border-radius:10px}.exercise-summary{display:block}.exercise-number{font-weight:bold}.exercise-dose{font-weight:bold}.exercise-detail{display:block}.exercise-tags{display:flex;gap:8px;flex-wrap:wrap}.exercise-tags span{background:#f5f4ee;padding:4px 8px}.report-score-table{display:flex;gap:10px;flex-wrap:wrap}.report-score-item{border:1px solid #dfe4dd;padding:12px;min-width:130px}.report-score-item strong{font-size:25px;display:block}.report-footer{margin-top:30px;border-top:1px solid #ddd;padding-top:16px;font-size:12px;color:#587068}.muted{color:#587068}.small{font-size:12px}.eyebrow{font-size:11px;color:#d66f4b;letter-spacing:.1em}.metric-table-wrap{overflow:auto}.exercise-video{margin:10px 0}.video-poster{display:flex;gap:12px;align-items:center;padding:12px;border:1px dashed #b9c9bd;border-radius:10px;background:#f4f8f3;cursor:pointer;width:100%;font:inherit;text-align:left;color:#183f35}.play-badge{width:40px;height:40px;border-radius:50%;background:#183f35;color:#fff;display:grid;place-items:center;flex:0 0 auto}.video-poster strong{display:block;font-size:13px}.video-poster span{display:block;font-size:11px;color:#587068}.video-frame{position:relative;aspect-ratio:16/9;background:#000;border-radius:10px;overflow:hidden}.video-frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0}.video-source{font-size:11px;color:#587068;margin-top:6px}.exercise-text-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.exercise-text-grid h4,.exercise-caution h4{margin:8px 0 4px;font-size:12px;color:#24584a}.exercise-text-grid p,.exercise-caution p{font-size:12px;color:#587068;margin:0}.exercise-text-grid ol,.exercise-text-grid ul,.exercise-caution ul{font-size:12px;padding-left:18px;margin:0}.exercise-caution{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:12px;border-top:1px dashed #ddd;padding-top:10px}.error-measured{font-weight:700;color:#8f3f1d}@media(max-width:700px){.exercise-text-grid,.exercise-caution{grid-template-columns:1fr}}@media print{body{margin:0}.exercise-card,.report-section{break-inside:avoid}}`;
+  const script = `<script>document.addEventListener('click',function(e){var p=e.target.closest('.video-poster');if(!p)return;var s=p.getAttribute('data-src');if(!s)return;var w=p.parentElement;w.innerHTML='<div class="video-frame"><iframe src="'+s+'" allowfullscreen allow="autoplay; fullscreen; picture-in-picture" referrerpolicy="no-referrer"></iframe></div><div class="video-source">来源：哔哩哔哩 · 我是小亓啊《30个瑜伽体式精讲》</div>';});<\\/script>`;
+  const html = `<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>形体塑身一体化报告</title><style>${styles}</style></head><body>${reportDocumentMarkup()}${script}</body></html>`;
   const url = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
   const link = document.createElement('a');
   link.href = url;
@@ -356,6 +376,14 @@ document.addEventListener('click', async event => {
     state.activeExercise = button.dataset.id;
     render();
   }
+  if (action === 'play-video') {
+    const src = button.dataset.src;
+    const wrap = button.closest('.exercise-video');
+    if (src && wrap) {
+      wrap.innerHTML = `<div class="video-frame"><iframe src="${e(src)}" title="瑜伽动作教学视频" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen loading="lazy" referrerpolicy="no-referrer"></iframe></div><div class="video-source">来源：哔哩哔哩 · 我是小亓啊《30个瑜伽体式精讲》 · 同一讲师完整示范</div>`;
+    }
+    return;
+  }
   if (action === 'analyze-practice') return handlePracticeAnalysis();
   if (action === 'remove-practice') {
     const ex = currentExercise();
@@ -365,7 +393,7 @@ document.addEventListener('click', async event => {
     render();
   }
   if (action === 'confirm-scores') {
-    if (!state.plan.every(x => state.practice[x.id]?.result)) return;
+    if (!state.plan.every(x => hasValidScore(state.practice[x.id]))) return;
     state.step = 4;
     render();
     window.scrollTo({ top: 0, behavior: 'smooth' });

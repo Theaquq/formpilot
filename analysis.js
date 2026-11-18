@@ -141,6 +141,23 @@ function lineAngleDifference(a, b, c, d) {
   return Math.min(raw, 180 - raw);
 }
 
+function frontalScale(landmarks, width, height) {
+  if (![11, 12, 23, 24].every((index) => visible(landmarks, index))) return null;
+  const leftShoulder = pixelPoint(landmarks, 11, width, height);
+  const rightShoulder = pixelPoint(landmarks, 12, width, height);
+  const leftHip = pixelPoint(landmarks, 23, width, height);
+  const rightHip = pixelPoint(landmarks, 24, width, height);
+  const shoulderWidth = distance(leftShoulder, rightShoulder);
+  const trunkLength = distance(midpoint(leftShoulder, rightShoulder), midpoint(leftHip, rightHip));
+  if (!trunkLength) return null;
+  return shoulderWidth / trunkLength;
+}
+
+function frontalViewUsable(landmarks, width, height) {
+  const ratio = frontalScale(landmarks, width, height);
+  return ratio === null ? null : ratio >= 0.3;
+}
+
 function linearScore(value, good, bad) {
   if (!Number.isFinite(value)) return 0;
   return clamp(1 - (value - good) / (bad - good));
@@ -520,6 +537,7 @@ function check(rule, observed, ratio = 0, evidence = '', error = false, value = 
 
 function evaluateShoulderLevel(rule, landmarks, width, height) {
   if (!visible(landmarks, 11) || !visible(landmarks, 12)) return check(rule, false);
+  if (frontalViewUsable(landmarks, width, height) === false) return check(rule, false);
   const left = pixelPoint(landmarks, 11, width, height);
   const right = pixelPoint(landmarks, 12, width, height);
   const angle = Math.atan2(Math.abs(left.y - right.y), Math.abs(left.x - right.x)) * 180 / Math.PI;
@@ -528,6 +546,7 @@ function evaluateShoulderLevel(rule, landmarks, width, height) {
 
 function evaluateTrunkStable(rule, landmarks, width, height) {
   if (![11, 12, 23, 24].every((index) => visible(landmarks, index))) return check(rule, false);
+  if (frontalViewUsable(landmarks, width, height) === false) return check(rule, false);
   const leftShoulder = pixelPoint(landmarks, 11, width, height);
   const rightShoulder = pixelPoint(landmarks, 12, width, height);
   const leftHip = pixelPoint(landmarks, 23, width, height);
@@ -683,6 +702,9 @@ function evaluateSymmetry(landmarks, width, height, exercise) {
   }
   const observedPairs = pairs.filter(([left, right]) => visible(landmarks, left) && visible(landmarks, right));
   if (!observedPairs.length || !visible(landmarks, 11) || !visible(landmarks, 12)) {
+    return { observed: false, ratio: 0, value: null, evidence: '' };
+  }
+  if (frontalViewUsable(landmarks, width, height) === false) {
     return { observed: false, ratio: 0, value: null, evidence: '' };
   }
 
@@ -873,33 +895,36 @@ function relatedRule(exercise, preferred) {
   return preferred.find((rule) => rules.includes(rule)) || rules[0] || null;
 }
 
-function exerciseFeedback(exercise, rule, evidence, fallbackTitle) {
+const RULE_UNITS = {
+  shoulderLevel: '°',
+  trunkStable: '°',
+  elbowExtended: '°',
+  headTilt: '°',
+  hipKnee90: '°',
+  armControl: '°'
+};
+
+function exerciseFeedback(exercise, rule, evidence, fallbackTitle, detail = {}) {
   const rules = Array.isArray(exercise.rules) ? exercise.rules : [];
-  const commonErrors = Array.isArray(exercise.commonErrors) ? exercise.commonErrors : [];
   const corrections = Array.isArray(exercise.corrections) ? exercise.corrections : [];
-  const keyPoints = Array.isArray(exercise.keyPoints) ? exercise.keyPoints : [];
+  const ruleErrors = exercise.ruleErrors && typeof exercise.ruleErrors === 'object' ? exercise.ruleErrors : {};
+  const specific = ruleErrors[rule] || {};
   const ruleIndex = rules.indexOf(rule);
   const index = ruleIndex >= 0 ? ruleIndex : 0;
   return {
     error: {
-      title: commonErrors[index] || fallbackTitle || '动作控制仍需关注',
+      title: specific.title || fallbackTitle || RULE_LABELS[rule] || '动作控制仍需关注',
+      measured: detail.measured || '',
       evidence,
-      standard: keyPoints[index] || keyPoints[0] || '在无痛、可控制的范围内完成动作'
+      standard: detail.reference || '在无痛、可控制的范围内完成动作，具体阈值以测量项为准'
     },
-    correction: corrections[index] || corrections[0] || '缩小动作幅度，放慢速度并重新确认身体对齐'
+    correction: specific.fix || corrections[index] || corrections[0] || '缩小动作幅度，放慢速度并重新确认身体对齐'
   };
 }
 
 function buildPracticeFeedback(frames, exercise, stability, motion, mediaType) {
   if (!frames.length) {
-    const fallback = exerciseFeedback(
-      exercise,
-      relatedRule(exercise, ['trunkStable']),
-      '媒体中未获得足够的人体关键点，无法计算动作角度或轨迹；请保证全身入镜、光线充足并减少遮挡',
-      '无法评估动作'
-    );
-    fallback.error.title = '未识别到足够的人体关键点，无法评估';
-    return { errors: [fallback.error], corrections: [fallback.correction] };
+    return { errors: [], corrections: [] };
   }
 
   const feedback = [];
@@ -913,7 +938,12 @@ function buildPracticeFeedback(frames, exercise, stability, motion, mediaType) {
     if (meanRatio >= 0.65 && badCount / checks.length <= 0.25) continue;
     const worst = [...checks].sort((a, b) => a.ratio - b.ratio)[0];
     const suffix = mediaType === 'video' ? `；${badCount}/${checks.length} 个有效采样帧提示该问题` : '';
-    feedback.push(exerciseFeedback(exercise, rule, `${worst.evidence}${suffix}`, RULE_LABELS[rule]));
+    const unit = RULE_UNITS[rule] || '';
+    const measured = Number.isFinite(worst.value) ? `实测 ${round(worst.value)}${unit}` : '本次媒体无法给出稳定数值';
+    feedback.push(exerciseFeedback(exercise, rule, `${worst.evidence}${suffix}`, RULE_LABELS[rule], {
+      measured,
+      reference: worst.reference
+    }));
   }
 
   const symmetry = frames.filter((frame) => frame.symmetry.observed).map((frame) => frame.symmetry);
@@ -923,13 +953,19 @@ function buildPracticeFeedback(frames, exercise, stability, motion, mediaType) {
     if (ratio < 0.6 || badCount / symmetry.length > 0.3) {
       const worst = [...symmetry].sort((a, b) => a.ratio - b.ratio)[0];
       const rule = relatedRule(exercise, ['shoulderLevel', 'trunkStable', 'armControl']);
-      feedback.push(exerciseFeedback(exercise, rule, worst.evidence, '左右对称性不足'));
+      feedback.push(exerciseFeedback(exercise, rule, worst.evidence, '左右对称性不足', {
+        measured: Number.isFinite(worst.value) ? `实测双侧平均高差 ${round(worst.value)}% 肩宽` : '本次媒体无法给出稳定数值',
+        reference: '理想 ≤5% 肩宽，>10% 需关注'
+      }));
     }
   }
 
   if (stability.observed && stability.ratio < 0.55) {
     const rule = relatedRule(exercise, ['trunkStable', 'shoulderLevel']);
-    feedback.push(exerciseFeedback(exercise, rule, stability.evidence, '核心稳定性不足'));
+    feedback.push(exerciseFeedback(exercise, rule, stability.evidence, '核心稳定性不足', {
+      measured: Number.isFinite(stability.value) ? `实测帧间波动 ${round(stability.value)}% 躯干长` : '本次媒体无法给出稳定数值',
+      reference: '理想 ≤2%，>10% 提示明显波动'
+    }));
   }
 
   if (motion.observed && (motion.ratio < 0.5 || motion.trajectoryRatio < 0.45)) {
@@ -937,7 +973,10 @@ function buildPracticeFeedback(frames, exercise, stability, motion, mediaType) {
     const evidence = motion.lowMotion
       ? '采样帧中未观察到足够的动作幅度，无法确认完整重复'
       : motion.evidence;
-    feedback.push(exerciseFeedback(exercise, rule, evidence, '动作轨迹或节奏不稳定'));
+    feedback.push(exerciseFeedback(exercise, rule, evidence, '动作轨迹或节奏不稳定', {
+      measured: motion.lowMotion ? '实测动作幅度低于可判定阈值' : (motion.evidence || ''),
+      reference: '应可见连续、可重复且节律一致的动作幅度'
+    }));
   }
 
   const unique = [];
@@ -1000,23 +1039,51 @@ function practiceConfidence(frames) {
 }
 
 function scorePractice(mediaType, frames, exercise, frameCount = frames.length) {
-  const stability = mediaType === 'video' ? stabilityStats(frames) : { observed: false };
-  const motion = mediaType === 'video' ? motionStats(frames, exercise) : { observed: false };
+  const stabilityEnabled = mediaType === 'video' && exercise.stabilityCheck !== false;
+  const stability = stabilityEnabled ? stabilityStats(frames) : { observed: false, ratio: 0, value: null };
+  const motion = mediaType === 'video' ? motionStats(frames, exercise) : { observed: false, ratio: 0, trajectoryRatio: 0, range: null };
   const dimensions = buildDimensions(mediaType, frames, stability, motion);
-  const observedMax = dimensions.filter((dimension) => dimension.observed).reduce((sum, dimension) => sum + dimension.max, 0);
-  const earned = dimensions.filter((dimension) => dimension.observed).reduce((sum, dimension) => sum + dimension.score, 0);
-  const score = observedMax ? Math.round(clamp(earned / observedMax, 0, 1) * 100) : 0;
+  const observedDimensions = dimensions.filter((dimension) => dimension.observed);
+  const observedMax = observedDimensions.reduce((sum, dimension) => sum + dimension.max, 0);
+  const earned = observedDimensions.reduce((sum, dimension) => sum + dimension.score, 0);
+  const confidence = practiceConfidence(frames);
+
+  let reason = '';
+  if (!frames.length) {
+    reason = '媒体中未检测到人体关键点，无法测量任何动作指标。请保证全身入镜、光线充足，并避免宽松衣物遮挡。';
+  } else if (confidence < 0.5) {
+    reason = `关键点平均可见度仅 ${Math.round(confidence * 100)}%，低于 50% 的可评估下限，无法给出可信分数。请重新拍摄。`;
+  } else if (observedMax < 40) {
+    reason = `本次媒体仅能观测到 ${observedMax} 分的评价维度，不足以形成可靠评分。请确保肩、髋、膝等关键关节完整入镜。`;
+  }
+
+  if (reason) {
+    return {
+      assessable: false,
+      reason,
+      mediaType,
+      score: null,
+      dimensions,
+      errors: [],
+      corrections: [],
+      metrics: [],
+      frameCount,
+      confidence
+    };
+  }
+
   const feedback = buildPracticeFeedback(frames, exercise, stability, motion, mediaType);
 
   return {
+    assessable: true,
     mediaType,
-    score,
+    score: Math.round(clamp(earned / observedMax, 0, 1) * 100),
     dimensions,
     errors: feedback.errors,
     corrections: feedback.corrections,
     metrics: buildPracticeMetrics(frames, stability, motion),
     frameCount,
-    confidence: practiceConfidence(frames)
+    confidence
   };
 }
 
