@@ -315,6 +315,22 @@ h3 { font-size: 17px; line-height: 1.4; }
 .standard-cues { border-top: 1px solid rgba(255,255,255,0.13); margin-top: 18px; padding-top: 16px; }
 .standard-cues strong { font-size: 12px; display: block; margin-bottom: 7px; }
 .standard-cues span { display: block; color: #b9cdc1; font-size: 12px; margin-top: 5px; }
+.practice-reference { margin: 0 0 18px; padding: 12px; border-radius: 14px; background: rgba(255,255,255,0.08); }
+.practice-reference-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 5px 10px; margin-bottom: 10px; }
+.practice-reference-head strong { font-size: 13px; }
+.practice-reference-head span { color: #c5d8cc; font-size: 11px; }
+.practice-reference video { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: contain; border-radius: 10px; background: #10271f; }
+.practice-reference p { margin: 9px 0 3px; color: #d5e2d9; font-size: 11px; line-height: 1.6; }
+.practice-reference-source { color: #a9c0b5; font-size: 10px; line-height: 1.65; }
+.practice-reference-source a { color: #eef5ef; text-underline-offset: 3px; }
+.practice-rules { border-top: 1px solid rgba(255,255,255,0.13); margin-top: 18px; padding-top: 16px; }
+.practice-rules > strong { display: block; margin-bottom: 10px; font-size: 12px; }
+.practice-rule { padding: 10px 11px; border-radius: 10px; background: rgba(255,255,255,0.07); }
+.practice-rule + .practice-rule { margin-top: 7px; }
+.practice-rule > span { color: #fff; font-size: 12px; font-weight: 600; }
+.practice-rule p { margin: 3px 0; color: #d9e4dd; font-size: 11px; line-height: 1.6; }
+.practice-rule small { display: block; color: #a9c0b5; font-size: 10px; line-height: 1.55; }
+.practice-rule-note { margin: 11px 0 0; color: #b9cdc1; font-size: 11px; line-height: 1.7; }
 .upload-panel { border: 1px solid var(--line); border-radius: 18px; padding: 22px; background: #fff; }
 .practice-drop { min-height: 230px; border: 1.5px dashed #c8d2c9; border-radius: 15px; background: #fafbf8; display: grid; place-items: center; text-align: center; overflow: hidden; position: relative; }
 .practice-drop.has-media { border-style: solid; }
@@ -340,6 +356,12 @@ h3 { font-size: 17px; line-height: 1.4; }
 .dimension-track { height: 5px; border-radius: 10px; background: #e9ede8; overflow: hidden; }
 .dimension-fill { height: 100%; border-radius: 10px; background: #6c9b80; }
 .dimension-score { text-align: right; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.score-formula { margin-top: 18px; padding: 13px 15px; border-left: 3px solid var(--accent); border-radius: 0 11px 11px 0; background: var(--paper); }
+.score-formula strong { display: block; margin-bottom: 3px; font-size: 12px; }
+.score-formula p { margin: 0; color: var(--ink-soft); font-size: 12px; line-height: 1.7; }
+.practice-metric-table { min-width: 860px; }
+.metric-samples { margin-top: 3px; color: var(--ink-soft); font-size: 10px; font-weight: 400; }
+.score-deduction { margin-top: 3px; color: var(--danger); font-size: 11px; font-weight: 500; }
 .error-list { display: grid; gap: 10px; margin-top: 20px; }
 .error-item { padding: 14px; border-radius: 13px; background: var(--danger-bg); }
 .error-item strong { display: block; color: #84443e; font-size: 13px; margin-bottom: 4px; }
@@ -418,6 +440,7 @@ h3 { font-size: 17px; line-height: 1.4; }
   .exercise-dose { grid-column: 2; text-align: left; }
   .exercise-detail { padding: 0 15px 17px; grid-template-columns: 1fr; }
   .exercise-tags { grid-column: auto; }
+  .standard-panel, .upload-panel, .score-card { padding: 17px; }
   .score-head { grid-template-columns: 1fr; justify-items: center; }
   .dimension-list { width: 100%; }
   .report-cover { flex-direction: column; }

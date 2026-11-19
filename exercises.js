@@ -36,14 +36,19 @@ export const EXERCISES = {
     ],
     ruleErrors: {
       elbowExtended: { title: '双臂未充分前伸，肘部过度弯曲', fix: '手臂向前延伸至肘部接近伸直，但不锁死；肩胛骨向两侧展开' },
-      trunkStable: { title: '躯干折叠时两侧肩髋连线明显不平行', fix: '减小折叠幅度，先让臀部坐向脚跟，再让躯干居中前伸' }
+      trunkStable: { title: '躯干折叠时两侧肩髋连线明显不平行', fix: '减小折叠幅度，先让臀部坐向脚跟，再让躯干居中前伸' },
+      childFold: { title: '婴儿式躯干折叠不足', fix: '先让臀部坐向脚跟，再让躯干向前折叠；膝或髋不适时垫毛毯并减小幅度' }
     },
     breath: '吸气到后背与肋廓，呼气时放松肩胛与下背，全程鼻吸鼻呼。',
     contraindications: '膝关节损伤、孕期、腹泻或饭后一小时内避免深度折叠；有膝痛时先咨询专业人士。',
     mediaTip: '从侧面拍摄，完整露出耳朵、肩峰、髋部、膝盖与手腕。',
-    rules: ['elbowExtended', 'trunkStable'],
+    rules: ['elbowExtended', 'trunkStable', 'childFold'],
+    requiredRules: ['childFold'],
     dynamic: false,
     video: {
+      clip: './exercise-videos/child-pose.mp4',
+      clipDuration: 14,
+      clipStart: 204,
       bvid: 'BV12K4y1U7C4',
       page: 23,
       title: '婴儿式 · 30个瑜伽体式精讲',
@@ -95,14 +100,19 @@ export const EXERCISES = {
     ruleErrors: {
       elbowExtended: { title: '肘关节未保持可控伸展（过屈或超伸）', fix: '保持肘部接近伸直但不锁死，肘窝相对，用手掌推地' },
       trunkStable: { title: '肩线与髋线不平行，躯干出现扭转或侧倾', fix: '双手双脚均匀受力，坐骨向后上方，躯干保持在正中' },
-      armControl: { title: '两侧手臂支撑角度不对称', fix: '让两侧手掌同宽同高，手腕位于肩正下方，均匀推地' }
+      armControl: { title: '两侧手臂支撑角度不对称', fix: '让两侧手掌同宽同高，手腕位于肩正下方，均匀推地' },
+      downDogHip: { title: '下犬式髋部折叠角度偏离参考范围', fix: '双手推地、坐骨向后上方延伸；可微屈膝，先保持背部延展，不强行压脚跟' }
     },
     breath: '吸气时肋廓扩张、脊柱延长，呼气时坐骨向后上方，不憋气。',
     contraindications: '腕管综合征、手腕损伤、未控制的高血压、眩晕或孕期后期应避免或改为靠墙版本。',
     mediaTip: '从侧面拍摄，完整露出耳朵、肩、髋、膝、脚踝与手掌。',
-    rules: ['elbowExtended', 'trunkStable', 'armControl'],
+    rules: ['elbowExtended', 'trunkStable', 'armControl', 'downDogHip'],
+    requiredRules: ['downDogHip'],
     dynamic: false,
     video: {
+      clip: './exercise-videos/downward-dog.mp4',
+      clipDuration: 14,
+      clipStart: 238,
       bvid: 'BV12K4y1U7C4',
       page: 28,
       title: '下犬式 · 30个瑜伽体式精讲',
@@ -150,14 +160,19 @@ export const EXERCISES = {
     ruleErrors: {
       shoulderLevel: { title: '双臂展开时肩线不水平', fix: '降低手臂高度，主动沉肩，让两侧肩峰保持同一水平线' },
       armControl: { title: '两侧手臂展开角度不对称', fix: '以肩为轴同时展开双臂，保持两侧手腕等高、掌心向下' },
-      trunkStable: { title: '躯干前倾或侧倾，肩髋连线不平行', fix: '重心移到两腿之间，肋骨回收，躯干保持直立' }
+      trunkStable: { title: '躯干前倾或侧倾，肩髋连线不平行', fix: '重心移到两腿之间，肋骨回收，躯干保持直立' },
+      frontKnee90: { title: '前腿屈膝角度偏离战士二式参考范围', fix: '调整步幅与下沉幅度，让前膝对准第二、三脚趾，膝关节角度逐步接近 90°' }
     },
     breath: '吸气延展脊柱并展开双臂，呼气屈膝下沉，保持均匀呼吸。',
     contraindications: '膝关节损伤、髋关节疼痛或平衡障碍者应减小步幅与屈膝角度，必要时靠墙练习。',
-    mediaTip: '从正面拍摄，完整露出双肩、双手、髋部、双膝与双脚。',
-    rules: ['shoulderLevel', 'armControl', 'trunkStable'],
+    mediaTip: '从侧面拍摄前腿，完整露出髋部、双膝与双脚；缺少侧面前腿膝角时不予评分。',
+    rules: ['shoulderLevel', 'armControl', 'trunkStable', 'frontKnee90'],
+    requiredRules: ['frontKnee90'],
     dynamic: false,
     video: {
+      clip: './exercise-videos/warrior-two.mp4',
+      clipDuration: 14,
+      clipStart: 236,
       bvid: 'BV12K4y1U7C4',
       page: 11,
       title: '战士二式 · 30个瑜伽体式精讲',
@@ -205,14 +220,19 @@ export const EXERCISES = {
     ruleErrors: {
       shoulderLevel: { title: '双臂上举时肩线不水平', fix: '先沉肩再上举，降低手臂高度，让两侧肩峰保持水平' },
       trunkStable: { title: '骨盆侧倾，肩线与髋线不平行', fix: '尾骨向下、肋骨回收，身体重量均匀压在支撑脚' },
-      armControl: { title: '两侧手臂上举角度不对称', fix: '双手同时向上延伸，保持两臂与肩同宽、等高' }
+      armControl: { title: '两侧手臂上举角度或对称性不足', fix: '双手同时向上延伸，保持两臂上举且等高；无法控制时可先在胸前合十' },
+      treeLeg: { title: '树式屈膝腿或支撑腿姿势不符合参考', fix: '支撑腿保持可控伸展，另一脚放在小腿或大腿内侧并避开膝关节；先靠墙减小难度' }
     },
     breath: '吸气延展脊柱并上举双臂，呼气稳定骨盆与支撑腿，保持自然呼吸。',
     contraindications: '踝关节或膝关节不稳定、眩晕、低血压者应靠墙练习，避免闭眼。',
     mediaTip: '从正面拍摄，完整露出双手、双肩、髋部与双脚，镜头保持水平。',
-    rules: ['shoulderLevel', 'trunkStable', 'armControl'],
+    rules: ['shoulderLevel', 'trunkStable', 'armControl', 'treeLeg'],
+    requiredRules: ['treeLeg'],
     dynamic: false,
     video: {
+      clip: './exercise-videos/tree-pose.mp4',
+      clipDuration: 14,
+      clipStart: 249,
       bvid: 'BV12K4y1U7C4',
       page: 3,
       title: '树式 · 30个瑜伽体式精讲',
@@ -259,15 +279,20 @@ export const EXERCISES = {
     ],
     ruleErrors: {
       shoulderLevel: { title: '桥式抬髋时两侧肩线不水平', fix: '双肩均匀压地，先在仰卧位调平肩线再抬髋' },
-      trunkStable: { title: '骨盆侧倾或肋骨外翻，肩髋连线不平行', fix: '降低抬髋高度，双膝同高，轻收下肋后再抬臀' }
+      trunkStable: { title: '骨盆侧倾或肋骨外翻，肩髋连线不平行', fix: '降低抬髋高度，双膝同高，轻收下肋后再抬臀' },
+      bridgeLine: { title: '桥式顶点髋部伸展不足，肩髋膝未接近斜线', fix: '脚掌压地并用臀肌抬髋，先收下肋；不要为了抬高而过度挺腰' }
     },
     breath: '抬髋时呼气，顶点保持自然呼吸，落下时吸气，不憋气。',
     contraindications: '颈部损伤、腰椎滑脱、严重骨质疏松或孕晚期应避免；出现腰痛立即降低高度或停止。',
     mediaTip: '从侧面拍摄，完整露出肩、髋、膝与脚踝；正面拍摄可观察骨盆是否水平。',
-    rules: ['shoulderLevel', 'trunkStable'],
+    rules: ['shoulderLevel', 'trunkStable', 'bridgeLine'],
+    requiredRules: ['bridgeLine'],
     dynamic: false,
     stabilityCheck: false,
     video: {
+      clip: './exercise-videos/bridge.mp4',
+      clipDuration: 14,
+      clipStart: 150,
       bvid: 'BV12K4y1U7C4',
       page: 30,
       title: '桥式 · 30个瑜伽体式精讲',

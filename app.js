@@ -181,6 +181,68 @@ function renderVideoBlock(ex) {
   const src = `https://player.bilibili.com/player.html?bvid=${video.bvid}&page=${video.page}&high_quality=1&danmaku=0`;
   return `<div class="exercise-video"><div class="video-poster" data-action="play-video" data-src="${e(src)}"><span class="play-badge">${icon('play', 26)}</span><div><strong>播放教学视频</strong><span>${e(video.title)}</span></div></div><div class="video-source">来源：${e(video.platform)} · ${e(video.teacher)}《30个瑜伽体式精讲》第 ${video.page} 集 · 同一讲师完整示范 <a href="${e(video.url)}" target="_blank" rel="noopener">在 B 站打开</a></div></div>`;
 }
+const PRACTICE_RULE_GUIDES = {
+  shoulderLevel: {
+    label: '肩线水平角',
+    scoring: '≤5°为100分，≥15°为0分，中间线性计分；>8°列入纠错',
+    view: '双肩、双髋可见且接近正面'
+  },
+  trunkStable: {
+    label: '肩线与髋线夹角',
+    scoring: '≤8°为100分，≥25°为0分，中间线性计分；>12°列入纠错',
+    view: '双肩、双髋可见且接近正面'
+  },
+  elbowExtended: {
+    label: '肘关节伸展角',
+    scoring: '150–190°为100分，向100°或210°偏离时线性降分；<140°或>200°列入纠错',
+    view: '肩、肘、腕可见'
+  },
+  armControl: {
+    label: '两侧肩外展角差',
+    scoring: '差值≤15°为100分，≥45°为0分，中间线性计分；>20°列入纠错',
+    view: '两侧肩、肘、腕、髋可见'
+  },
+  frontKnee90: {
+    label: '前腿膝关节角（必需）',
+    scoring: '与90°的偏差≤10°为100分，≥45°为0分；偏差>20°列入纠错',
+    view: '侧面且髋、膝、踝可见；明确正面时不评此项'
+  },
+  childFold: {
+    label: '婴儿式躯干折叠角（必需）',
+    scoring: '侧面肩—髋—膝角≤55°为100分，≥125°为0分，中间线性计分；>80°列入纠错',
+    view: '侧面且肩、髋、膝可见；接近站立的折叠角不按婴儿式评分'
+  },
+  treeLeg: {
+    label: '树式屈膝与支撑腿（必需）',
+    scoring: '屈膝侧45–95°、支撑侧≥160°较优，屈膝符合度与支撑腿分别占70%/30%；双腿均>150°不可评估',
+    view: '正面且双侧髋、膝、踝可见'
+  },
+  downDogHip: {
+    label: '肩—髋—膝折叠角（必需）',
+    scoring: '与90°的偏差≤15°为100分，≥45°为0分；偏差>25°列入纠错',
+    view: '侧面且肩、髋、膝可见；明确正面时不评此项'
+  },
+  bridgeLine: {
+    label: '肩—髋—膝伸展角（必需）',
+    scoring: '165–180°为100分，角度降低时线性降分，≤125°为0分；<155°列入纠错；髋点未高于肩和膝时不可评估',
+    view: '侧面且肩、髋、膝可见；明确正面时不评此项'
+  }
+};
+function renderPracticeReference(ex) {
+  const video = ex.video;
+  if (!video?.clip) return '';
+  const start = `${Math.floor(video.clipStart / 60)}:${String(video.clipStart % 60).padStart(2, '0')}`;
+  return `<div class="practice-reference"><div class="practice-reference-head"><strong>${video.clipDuration} 秒标准示范</strong><span>不超过 15 秒 · 面部已遮挡</span></div><video src="${e(video.clip)}" width="640" height="360" controls playsinline preload="metadata" muted aria-label="${e(ex.name)}14秒标准示范"></video><p>同一课程、同一组讲师与示范者 · 本地无声节选，仅供对照，不参与打分</p><div class="practice-reference-source">节选来源：哔哩哔哩 · ${e(video.teacher)}《30个瑜伽体式精讲》第 ${video.page} 集，原片 ${start} 起 <a href="${e(video.url)}" target="_blank" rel="noopener">查看原课程</a></div></div>`;
+}
+function renderPracticeScoringGuide(ex) {
+  const rules = ex.rules.map(rule => {
+    const guide = { id: rule, ...PRACTICE_RULE_GUIDES[rule] };
+    if (rule === 'armControl' && ex.id === 'warrior-two') return { ...guide, scoring: '双臂目标90°的角度符合度占70%，两侧差占30%；75–105°且差≤15°较优，角度偏差>20°或差>20°列入纠错', view: '正面且两侧肩、肘、腕、髋可见' };
+    if (rule === 'armControl' && ex.id === 'tree-pose') return { ...guide, scoring: '双臂上举角符合度占70%，两侧差占30%；160–180°且差≤15°较优，<150°或差>20°列入纠错', view: '正面且两侧肩、肘、腕、髋可见' };
+    return guide;
+  }).filter(rule => rule.label);
+  return `<div class="practice-rules"><strong>客观计分项与扣分规则</strong>${rules.map(rule => `<div class="practice-rule" data-rule="${rule.id}"><span>${e(rule.label)}</span><p>${e(rule.scoring)}</p><small>测量条件：${e(rule.view)}</small></div>`).join('')}<p class="practice-rule-note">仅计算可见度达标的二维关键点。视角或关键点不满足条件时标为“未观测”，不猜角度、不扣分；必需关键姿势未测到时，本次媒体不可评估。呼吸、疼痛、脊柱曲度等无法由二维关键点可靠判断的项目不参与评分。</p></div>`;
+}
 function renderExerciseCard(ex, i, open = false) {
   return `<details class="exercise-card" ${open ? 'open' : ''}><summary class="exercise-summary"><span class="exercise-number">${String(i + 1).padStart(2, '0')}</span><div class="exercise-title"><h3>${e(ex.name)}${ex.sanskrit ? `<span class="exercise-sanskrit">${e(ex.sanskrit)}</span>` : ''}</h3><p>${e(ex.category)} · ${e(ex.target)}</p></div><div class="exercise-dose">${e(ex.dose)}</div></summary><div class="exercise-detail">
     ${renderVideoBlock(ex)}
@@ -201,7 +263,7 @@ function renderPracticeStep() {
   return `${heading('Step 03 · Movement review', '对照标准，完成动作纠错', '逐个动作上传练习照片或视频。系统只对能够测到的关节角度、对称性与稳定性下结论；证据不足时直接标记不可评估，不猜测、不给分。', `${scoredCount} / ${state.plan.length} 已评分`)}
     <div class="practice-tabs">${state.plan.map((item, i) => `<button class="practice-tab ${item.id === ex.id ? 'active' : ''} ${hasValidScore(state.practice[item.id]) ? 'scored' : ''}" data-action="select-exercise" data-id="${item.id}">${hasValidScore(state.practice[item.id]) ? icon('checkCircle', 14) : `<span>${i + 1}</span>`}${e(item.name)}</button>`).join('')}</div>
     <div class="practice-layout">
-      <section class="standard-panel"><span class="tag">标准动作 ${String(state.plan.indexOf(ex) + 1).padStart(2, '0')}</span><h2>${e(ex.name)}</h2><p class="standard-target">${e(ex.target)}</p><div class="standard-dose"><strong>训练剂量</strong><br>${e(ex.dose)} · 端点停留 ${e(ex.hold || '按节奏')} · 组数 ${e(ex.sets)} 组</div><ol>${ex.steps.map(x => `<li>${e(x)}</li>`).join('')}</ol><div class="standard-cues"><strong>评分重点</strong>${ex.keyPoints.map(x => `<span>· ${e(x)}</span>`).join('')}</div></section>
+      <section class="standard-panel"><span class="tag">标准动作 ${String(state.plan.indexOf(ex) + 1).padStart(2, '0')}</span><h2>${e(ex.name)}</h2><p class="standard-target">${e(ex.target)}</p>${renderPracticeReference(ex)}<div class="standard-dose"><strong>训练剂量</strong><br>${e(ex.dose)} · 端点停留 ${e(ex.hold || '按节奏')} · 组数 ${e(ex.sets)} 组</div><ol>${ex.steps.map(x => `<li>${e(x)}</li>`).join('')}</ol><div class="standard-cues"><strong>动作标准要点</strong>${ex.keyPoints.map(x => `<span>· ${e(x)}</span>`).join('')}</div>${renderPracticeScoringGuide(ex)}</section>
       <section class="upload-panel"><div class="section-head"><div><h3>上传本动作练习媒体</h3><p>${e(ex.mediaTip)}</p></div><span class="section-index">照片 / 视频</span></div>
         <input class="upload-input" id="practice-file" type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm" data-practice-file />
         <label for="practice-file" class="practice-drop ${entry.file ? 'has-media' : ''}">${renderPracticeMedia(entry)}</label>
@@ -227,9 +289,13 @@ function renderScore(result) {
   }
   const circumference = 2 * Math.PI * 45;
   const offset = circumference * (1 - result.score / 100);
+  const observedDimensions = result.dimensions.filter(d => d.observed !== false);
+  const observedMax = observedDimensions.reduce((sum, d) => sum + d.max, 0);
+  const earned = Number(observedDimensions.reduce((sum, d) => sum + d.score, 0).toFixed(1));
   return `<section class="score-card"><div class="section-head"><div><h2>动作评分结果</h2><p>${result.mediaType === 'video' ? `动态分析 · ${result.frameCount} 个采样帧` : '静态照片分析'} · 可信度 ${confidenceText(result.confidence)}</p></div><span class="tag ${result.score >= 85 ? 'good' : result.score >= 60 ? 'warn' : 'bad'}">${result.score >= 85 ? '动作较好' : result.score >= 60 ? '仍需调整' : '建议退阶练习'}</span></div>
     <div class="score-head"><div class="score-ring"><svg viewBox="0 0 110 110"><circle class="ring-bg" cx="55" cy="55" r="45"></circle><circle class="ring-value" cx="55" cy="55" r="45" stroke-dasharray="${circumference}" stroke-dashoffset="${offset}"></circle></svg><div class="score-number"><strong>${result.score}</strong><span>/ 100 分</span></div></div><div class="dimension-list">${result.dimensions.map(d => `<div class="dimension-row"><span>${e(d.name)}</span><div class="dimension-track"><div class="dimension-fill" style="width:${d.observed === false ? 0 : Math.max(0, d.score / d.max * 100)}%"></div></div><span class="dimension-score">${d.observed === false ? '未观测' : `${d.score}/${d.max}`}</span></div>`).join('')}</div></div>
-    ${result.metrics.length ? `<div class="metric-table-wrap" style="margin-top:18px"><table class="metric-table"><thead><tr><th>本次测量项</th><th>测量值</th><th>判定参考</th><th>结论</th></tr></thead><tbody>${result.metrics.map(m => `<tr><td>${e(m.label)}</td><td>${e(m.value)}</td><td class="muted">${e(m.reference)}</td><td>${statusTag(m.status, m.status)}</td></tr>`).join('')}</tbody></table></div>` : ''}
+    <div class="score-formula"><strong>总分如何得出</strong><p>可观测维度实得 ${earned} / ${observedMax} 分，按“实得分 ÷ 可观测满分 × 100”归一化为 ${result.score} 分。未观测维度不计分也不扣分。下表单项扣分 = 100 − 单项得分，仅表示该测量项的达成度。</p></div>
+    ${result.metrics.length ? `<div class="metric-table-wrap" style="margin-top:18px"><table class="metric-table practice-metric-table"><thead><tr><th>本次测量项</th><th>实测值 / 采样</th><th>客观判定参考</th><th>单项得分 / 扣分</th><th>结论</th></tr></thead><tbody>${result.metrics.map(m => { const hasItemScore = Number.isFinite(m.itemScore); return `<tr><td>${e(m.label)}</td><td>${e(m.value)}${e(m.unit || '')}<div class="metric-samples">${m.samples || 0} 个有效采样帧</div></td><td class="muted">${e(m.reference)}</td><td>${hasItemScore ? `<strong>${m.itemScore}/100</strong><div class="score-deduction">单项扣 ${100 - m.itemScore} 分</div>` : '—'}</td><td>${statusTag(m.status, m.status)}</td></tr>`; }).join('')}</tbody></table></div>` : ''}
     ${result.errors.length ? `<div class="error-list">${result.errors.map(err => `<div class="error-item"><strong>${e(err.title)}</strong>${err.measured ? `<p class="error-measured">${e(err.measured)}</p>` : ''}<p>${e(err.evidence)}</p><p><b>判定标准：</b>${e(err.standard)}</p></div>`).join('')}</div>` : `<div class="empty-state" style="margin-top:20px"><div class="empty-icon">${icon('checkCircle', 23)}</div><h3>本次可测指标均在参考范围内</h3><p>报告只针对已测量到的项目下结论，不代表未观测项目也完全正确。</p></div>`}
     ${result.corrections.length ? `<div class="correction-box"><strong>修正建议</strong><ul>${result.corrections.map(x => `<li>${e(x)}</li>`).join('')}</ul></div>` : ''}
   </section>`;

@@ -510,6 +510,11 @@ const PHOTO_RULE_TARGETS = {
   elbowExtended: ['关键姿势'],
   headTilt: ['关键姿势'],
   hipKnee90: ['关键姿势'],
+  frontKnee90: ['关键姿势'],
+  childFold: ['关键姿势'],
+  treeLeg: ['关键姿势'],
+  downDogHip: ['关键姿势'],
+  bridgeLine: ['关键姿势'],
   armControl: ['关键姿势']
 };
 
@@ -519,6 +524,11 @@ const VIDEO_RULE_TARGETS = {
   headTilt: ['关节排列'],
   elbowExtended: ['动作轨迹'],
   hipKnee90: ['动作轨迹'],
+  frontKnee90: ['动作轨迹'],
+  childFold: ['动作轨迹'],
+  treeLeg: ['动作轨迹'],
+  downDogHip: ['动作轨迹'],
+  bridgeLine: ['动作轨迹'],
   armControl: ['动作轨迹']
 };
 
@@ -528,6 +538,11 @@ const RULE_LABELS = {
   elbowExtended: '肘关节伸展角度',
   headTilt: '头颈位置',
   hipKnee90: '髋膝角度偏差',
+  frontKnee90: '前腿膝关节角度',
+  childFold: '婴儿式躯干折叠角',
+  treeLeg: '树式屈膝腿膝角',
+  downDogHip: '肩—髋—膝折叠角',
+  bridgeLine: '肩—髋—膝伸展角',
   armControl: '手臂控制'
 };
 
@@ -655,6 +670,107 @@ function evaluateHipKnee90(rule, landmarks, width, height, exercise) {
   return check(rule, true, ratio, evidence, referenceDeviation > 20, referenceDeviation, reference);
 }
 
+function evaluateChildFold(rule, landmarks, width, height) {
+  if (frontalViewUsable(landmarks, width, height) === true) return check(rule, false);
+  const observations = [];
+  for (const [side, shoulder, hip, knee] of [['左', 11, 23, 25], ['右', 12, 24, 26]]) {
+    if (![shoulder, hip, knee].every((index) => visible(landmarks, index))) continue;
+    const angle = angleAt(
+      pixelPoint(landmarks, shoulder, width, height),
+      pixelPoint(landmarks, hip, width, height),
+      pixelPoint(landmarks, knee, width, height)
+    );
+    if (angle !== null) observations.push({ side, angle });
+  }
+  if (!observations.length || observations.every((item) => item.angle > 150)) return check(rule, false);
+  const meanAngle = average(observations.map((item) => item.angle));
+  const ratios = observations.map((item) => linearScore(item.angle, 55, 125));
+  const evidence = observations.map((item) => `${item.side}侧肩髋膝折叠角约 ${round(item.angle)}°`).join('，');
+  return check(rule, true, average(ratios), evidence, observations.some((item) => item.angle > 80), meanAngle, '婴儿式侧面肩—髋—膝折叠角≤55°较优，>80°提示折叠不足；≥125°为0分');
+}
+
+function evaluateTreeLeg(rule, landmarks, width, height) {
+  if (frontalViewUsable(landmarks, width, height) !== true) return check(rule, false);
+  const observations = [];
+  for (const [side, hip, knee, ankle] of [['左', 23, 25, 27], ['右', 24, 26, 28]]) {
+    if (![hip, knee, ankle].every((index) => visible(landmarks, index))) continue;
+    const angle = angleAt(
+      pixelPoint(landmarks, hip, width, height),
+      pixelPoint(landmarks, knee, width, height),
+      pixelPoint(landmarks, ankle, width, height)
+    );
+    if (angle !== null) observations.push({ side, angle });
+  }
+  if (observations.length < 2) return check(rule, false);
+  const bent = [...observations].sort((a, b) => a.angle - b.angle)[0];
+  const support = [...observations].sort((a, b) => b.angle - a.angle)[0];
+  if (bent.angle > 150) return check(rule, false);
+  const bendRatio = linearScore(Math.abs(bent.angle - 70), 25, 80);
+  const supportRatio = linearScore(180 - support.angle, 20, 50);
+  const ratio = bendRatio * 0.7 + supportRatio * 0.3;
+  const evidence = `${bent.side}侧屈膝约 ${round(bent.angle)}°，${support.side}侧支撑腿膝角约 ${round(support.angle)}°`;
+  const hasError = bent.angle < 45 || bent.angle > 95 || support.angle < 160;
+  return check(rule, true, ratio, evidence, hasError, bent.angle, '树式正面屈膝侧45–95°、支撑侧≥160°较优；双腿膝角均>150°时不按树式评分');
+}
+
+function evaluateFrontKnee90(rule, landmarks, width, height) {
+  if (frontalViewUsable(landmarks, width, height) === true) return check(rule, false);
+  const observations = [];
+  for (const [side, hip, knee, ankle] of [['左', 23, 25, 27], ['右', 24, 26, 28]]) {
+    if (![hip, knee, ankle].every((index) => visible(landmarks, index))) continue;
+    const angle = angleAt(
+      pixelPoint(landmarks, hip, width, height),
+      pixelPoint(landmarks, knee, width, height),
+      pixelPoint(landmarks, ankle, width, height)
+    );
+    if (angle !== null) observations.push({ side, angle });
+  }
+  if (!observations.length) return check(rule, false);
+  const front = observations.sort((a, b) => a.angle - b.angle)[0];
+  const deviation = Math.abs(front.angle - 90);
+  return check(rule, true, linearScore(deviation, 10, 45), `${front.side}侧前腿膝角约 ${round(front.angle)}°`, deviation > 20, front.angle, '侧面前腿膝角目标约90°，允许约±10°；偏差>20°需关注');
+}
+
+function evaluateDownDogHip(rule, landmarks, width, height) {
+  if (frontalViewUsable(landmarks, width, height) === true) return check(rule, false);
+  const observations = [];
+  for (const [side, shoulder, hip, knee] of [['左', 11, 23, 25], ['右', 12, 24, 26]]) {
+    if (![shoulder, hip, knee].every((index) => visible(landmarks, index))) continue;
+    const angle = angleAt(
+      pixelPoint(landmarks, shoulder, width, height),
+      pixelPoint(landmarks, hip, width, height),
+      pixelPoint(landmarks, knee, width, height)
+    );
+    if (angle !== null) observations.push({ side, angle });
+  }
+  if (!observations.length) return check(rule, false);
+  const meanAngle = average(observations.map((item) => item.angle));
+  const ratios = observations.map((item) => linearScore(Math.abs(item.angle - 90), 15, 45));
+  const evidence = observations.map((item) => `${item.side}侧肩髋膝角约 ${round(item.angle)}°`).join('，');
+  return check(rule, true, average(ratios), evidence, observations.some((item) => Math.abs(item.angle - 90) > 25), meanAngle, '侧面肩—髋—膝角以约90°为参考，75–105°得分较优；偏离>25°需关注');
+}
+
+function evaluateBridgeLine(rule, landmarks, width, height) {
+  if (frontalViewUsable(landmarks, width, height) === true) return check(rule, false);
+  const observations = [];
+  for (const [side, shoulder, hip, knee] of [['左', 11, 23, 25], ['右', 12, 24, 26]]) {
+    if (![shoulder, hip, knee].every((index) => visible(landmarks, index))) continue;
+    const shoulderPoint = pixelPoint(landmarks, shoulder, width, height);
+    const hipPoint = pixelPoint(landmarks, hip, width, height);
+    const kneePoint = pixelPoint(landmarks, knee, width, height);
+    const angle = angleAt(shoulderPoint, hipPoint, kneePoint);
+    const shoulderKneeDistance = distance(shoulderPoint, kneePoint);
+    if (angle === null || !shoulderKneeDistance) continue;
+    const liftPct = (Math.min(shoulderPoint.y, kneePoint.y) - hipPoint.y) / shoulderKneeDistance * 100;
+    observations.push({ side, angle, liftPct });
+  }
+  if (!observations.length || !observations.some((item) => item.liftPct > 0)) return check(rule, false);
+  const meanAngle = average(observations.map((item) => item.angle));
+  const ratios = observations.map((item) => linearScore(180 - item.angle, 15, 55));
+  const evidence = observations.map((item) => `${item.side}侧肩髋膝伸展角约 ${round(item.angle)}°，髋点垂直抬高量约 ${round(item.liftPct)}% 肩膝距`).join('，');
+  return check(rule, true, average(ratios), evidence, observations.some((item) => item.angle < 155 || item.liftPct <= 0), meanAngle, '桥式顶点侧面肩—髋—膝目标165–180°，且髋点须高于肩和膝；<155°提示髋伸不足');
+}
+
 function evaluateArmControl(rule, landmarks, width, height, exercise) {
   const arms = [];
   for (const [side, shoulder, elbow, wrist, hip] of [['左', 11, 13, 15, 23], ['右', 12, 14, 16, 24]]) {
@@ -682,6 +798,20 @@ function evaluateArmControl(rule, landmarks, width, height, exercise) {
   const bilateral = arms.filter((arm) => arm.abduction !== null);
   if (bilateral.length < 2) return check(rule, false);
   const difference = Math.abs(bilateral[0].abduction - bilateral[1].abduction);
+  if (['warrior-two', 'tree-pose'].includes(exercise.id)) {
+    if (frontalViewUsable(landmarks, width, height) !== true) return check(rule, false);
+    const warrior = exercise.id === 'warrior-two';
+    const target = warrior ? 90 : 175;
+    const angleRatios = bilateral.map((arm) => linearScore(Math.abs(arm.abduction - target), 15, warrior ? 45 : 55));
+    const ratio = average(angleRatios) * 0.7 + linearScore(difference, 15, 45) * 0.3;
+    const meanAngle = average(bilateral.map((arm) => arm.abduction));
+    const evidence = bilateral.map((arm) => `${arm.side}侧肩外展角约 ${round(arm.abduction)}°`).join('，') + `，两侧差约 ${round(difference)}°`;
+    const hasError = difference > 20 || bilateral.some((arm) => Math.abs(arm.abduction - target) > 20);
+    const reference = warrior
+      ? '战士二式正面双臂肩外展角目标90°，75–105°且两侧差≤15°较优；角度偏差>20°或两侧差>20°需关注'
+      : '树式正面双臂上举肩外展角160–180°且两侧差≤15°较优；<150°或两侧差>20°需关注';
+    return check(rule, true, ratio, evidence, hasError, meanAngle, reference);
+  }
   return check(rule, true, linearScore(difference, 15, 45), `两侧肩外展角差约 ${round(difference)}°`, difference > 20, difference, '两侧理想差≤15°，>20°需关注');
 }
 
@@ -691,6 +821,11 @@ function evaluateRule(rule, landmarks, width, height, exercise) {
   if (rule === 'elbowExtended') return evaluateElbowExtended(rule, landmarks, width, height, exercise);
   if (rule === 'headTilt') return evaluateHeadTilt(rule, landmarks, width, height, exercise);
   if (rule === 'hipKnee90') return evaluateHipKnee90(rule, landmarks, width, height, exercise);
+  if (rule === 'frontKnee90') return evaluateFrontKnee90(rule, landmarks, width, height);
+  if (rule === 'childFold') return evaluateChildFold(rule, landmarks, width, height);
+  if (rule === 'treeLeg') return evaluateTreeLeg(rule, landmarks, width, height);
+  if (rule === 'downDogHip') return evaluateDownDogHip(rule, landmarks, width, height);
+  if (rule === 'bridgeLine') return evaluateBridgeLine(rule, landmarks, width, height);
   if (rule === 'armControl') return evaluateArmControl(rule, landmarks, width, height, exercise);
   return check(rule, false);
 }
@@ -876,7 +1011,7 @@ function buildDimensions(mediaType, frames, stability, motion) {
       scored = motion.observed ? { score: round(max * motion.ratio, 1), max, observed: true } : { score: 0, max, observed: false };
     } else if (name === '安全') {
       const ratios = frames.flatMap((frame) => frame.checks
-        .filter((item) => item.observed && ['trunkStable', 'headTilt', 'elbowExtended', 'hipKnee90'].includes(item.rule))
+        .filter((item) => item.observed && ['trunkStable', 'headTilt', 'elbowExtended', 'hipKnee90', 'frontKnee90', 'childFold', 'treeLeg', 'downDogHip', 'bridgeLine'].includes(item.rule))
         .map((item) => item.ratio));
       scored = scoreFromRatios(max, ratios);
     } else {
@@ -901,6 +1036,11 @@ const RULE_UNITS = {
   elbowExtended: '°',
   headTilt: '°',
   hipKnee90: '°',
+  frontKnee90: '°',
+  childFold: '°',
+  treeLeg: '°',
+  downDogHip: '°',
+  bridgeLine: '°',
   armControl: '°'
 };
 
@@ -997,11 +1137,15 @@ function buildPracticeMetrics(frames, stability, motion) {
   const rules = [...new Set(frames.flatMap((frame) => frame.checks.filter((item) => item.observed && Number.isFinite(item.value)).map((item) => item.rule)))];
   for (const rule of rules) {
     const checks = frames.flatMap((frame) => frame.checks).filter((item) => item.rule === rule && item.observed && Number.isFinite(item.value));
+    const meanRatio = average(checks.map((item) => item.ratio));
     metrics.push({
       label: RULE_LABELS[rule] || rule,
       value: round(average(checks.map((item) => item.value))),
+      unit: RULE_UNITS[rule] || '',
       reference: checks[0].reference,
-      status: average(checks.map((item) => item.ratio)) >= 0.65 ? '达标' : '需关注'
+      itemScore: Math.round(meanRatio * 100),
+      samples: checks.length,
+      status: meanRatio >= 0.65 ? '达标' : '需关注'
     });
   }
 
@@ -1010,7 +1154,10 @@ function buildPracticeMetrics(frames, stability, motion) {
     metrics.push({
       label: '双侧关键点平均高差/肩宽',
       value: round(average(symmetry.map((item) => item.value))),
+      unit: '%',
       reference: '理想≤5%，>10%需关注',
+      itemScore: Math.round(average(symmetry.map((item) => item.ratio)) * 100),
+      samples: symmetry.length,
       status: average(symmetry.map((item) => item.ratio)) >= 0.6 ? '达标' : '需关注'
     });
   }
@@ -1018,7 +1165,10 @@ function buildPracticeMetrics(frames, stability, motion) {
     metrics.push({
       label: '核心关键点帧间波动/躯干长',
       value: round(stability.value),
+      unit: '%',
       reference: '理想≤2%，>10%提示明显波动',
+      itemScore: Math.round(stability.ratio * 100),
+      samples: frames.length,
       status: stability.ratio >= 0.55 ? '达标' : '需关注'
     });
   }
@@ -1026,7 +1176,10 @@ function buildPracticeMetrics(frames, stability, motion) {
     metrics.push({
       label: '动作信号采样范围',
       value: round(motion.range),
+      unit: '',
       reference: '应可见连续、可重复的有效动作幅度',
+      itemScore: Math.round(Math.min(motion.ratio, motion.trajectoryRatio) * 100),
+      samples: frames.length,
       status: motion.ratio >= 0.5 && motion.trajectoryRatio >= 0.45 ? '达标' : '需关注'
     });
   }
@@ -1047,12 +1200,16 @@ function scorePractice(mediaType, frames, exercise, frameCount = frames.length) 
   const observedMax = observedDimensions.reduce((sum, dimension) => sum + dimension.max, 0);
   const earned = observedDimensions.reduce((sum, dimension) => sum + dimension.score, 0);
   const confidence = practiceConfidence(frames);
+  const requiredRules = Array.isArray(exercise.requiredRules) ? exercise.requiredRules : [];
+  const missingRequired = requiredRules.filter((required) => !frames.some((frame) => frame.checks.some((item) => item.rule === required && item.observed)));
 
   let reason = '';
   if (!frames.length) {
     reason = '媒体中未检测到人体关键点，无法测量任何动作指标。请保证全身入镜、光线充足，并避免宽松衣物遮挡。';
   } else if (confidence < 0.5) {
     reason = `关键点平均可见度仅 ${Math.round(confidence * 100)}%，低于 50% 的可评估下限，无法给出可信分数。请重新拍摄。`;
+  } else if (missingRequired.length) {
+    reason = `未可靠测到${exercise.name}的必需项目：${missingRequired.map((rule) => RULE_LABELS[rule] || rule).join('、')}。请按本动作拍摄提示重新上传；系统不会用其他姿势的角度替代关键姿势。`;
   } else if (observedMax < 40) {
     reason = `本次媒体仅能观测到 ${observedMax} 分的评价维度，不足以形成可靠评分。请确保肩、髋、膝等关键关节完整入镜。`;
   }
